@@ -1,8 +1,11 @@
 version: v2
+inputs:
+  - module: buf.build/wcygan/simple-connect-web-stack
 managed:
   enabled: true
-  go_package_prefix:
-    default: github.com/wcygan/simple-connect-web-stack/internal/gen
+  override:
+    - file_option: go_package_prefix
+      value: github.com/wcygan/simple-connect-web-stack/internal/gen
 plugins:
   # Go code generation
   - remote: buf.build/protocolbuffers/go

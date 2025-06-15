@@ -1,8 +1,7 @@
 version: v2
 modules:
-  - path: proto
-    includes:
-      - proto
+  - path: .
+    name: buf.build/wcygan/simple-connect-web-stack
 breaking:
   use:
     - FILE
