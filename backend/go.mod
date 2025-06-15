@@ -1,6 +1,6 @@
 module github.com/wcygan/simple-connect-web-stack
 
-go 1.23
+go 1.24
 
 require (
 	buf.build/gen/go/wcygan/simple-connect-web-stack/connectrpc/go v1.18.1-20250615194027-1ba9625cc7f0.1

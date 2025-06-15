@@ -12,7 +12,7 @@ console.log("🔧 Testing ConnectRPC stack integration...");
 console.log("\n📡 Testing backend health check...");
 
 try {
-  const healthResponse = await fetch("http://localhost:3000/todo.v1.TodoService/HealthCheck", {
+  const healthResponse = await fetch("http://localhost:3001/todo.v1.TodoService/HealthCheck", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +36,7 @@ try {
 console.log("\n📝 Testing task creation...");
 
 try {
-  const createResponse = await fetch("http://localhost:3000/todo.v1.TodoService/CreateTask", {
+  const createResponse = await fetch("http://localhost:3001/todo.v1.TodoService/CreateTask", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -52,7 +52,7 @@ try {
 
     // Test listing tasks
     console.log("\n📋 Testing task listing...");
-    const listResponse = await fetch("http://localhost:3000/todo.v1.TodoService/ListTasks", {
+    const listResponse = await fetch("http://localhost:3001/todo.v1.TodoService/ListTasks", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

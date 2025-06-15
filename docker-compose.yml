@@ -7,10 +7,9 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: todos
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
@@ -19,7 +18,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       DATABASE_URL: "root:root@tcp(db:3306)/todos?parseTime=true"
     depends_on:
@@ -33,7 +32,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       BACKEND_URL: "http://backend:3000"
     depends_on:
