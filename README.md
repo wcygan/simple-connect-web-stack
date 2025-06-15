@@ -1,11 +1,44 @@
 # simple-connect-web-stack
 
-We will make `simple-web-stack` v2 in this project. It will be modeled similar to `simple-web-stack-v1`
+Modern todo application using ConnectRPC + Go backend with Deno Fresh frontend.
 
-TLDR; https://github.com/wcygan/simple-web-stack but using Go + https://connectrpc.com/ instead of Rust + https://docs.rs/axum/latest/axum/
+## Quick Start
 
-We will use the Buf Schema Registry to publish our protobuf schemas. They will be defined locally in the `proto` directory.
+```bash
+# Initialize project structure
+deno run -A scripts/init-v2.ts
 
-Some information on `v1` can be found in [v1](/v1) directory.
+# Generate code from protobuf
+buf generate
 
-Some information on `v2` can be found in [v2](/v2) directory.
+# Start development environment
+deno task up
+```
+
+## Architecture
+
+**v2 Stack:**
+- Frontend: Deno Fresh 2.0 + Preact Signals
+- Backend: Go + ConnectRPC 
+- Protocol: Protocol Buffers
+- Database: MySQL 8.0
+
+**v1 → v2 Migration:**
+- REST API → RPC with Protocol Buffers
+- Rust/Axum → Go/ConnectRPC
+- Same frontend architecture (Deno Fresh)
+
+## Project Structure
+
+```
+/frontend/  - Deno Fresh frontend (unchanged from v1)
+/backend/   - Go + ConnectRPC backend
+/proto/     - Protocol Buffer definitions
+```
+
+## Development
+
+See [CLAUDE.md](./CLAUDE.md) for detailed development guidance.
+
+Previous version documentation:
+- [v1 Architecture](/v1) - Rust/Axum REST implementation

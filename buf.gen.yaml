@@ -1,0 +1,27 @@
+version: v2
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/wcygan/simple-connect-web-stack/internal/gen
+plugins:
+  # Go code generation
+  - remote: buf.build/protocolbuffers/go
+    out: backend/internal/gen
+    opt:
+      - paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: backend/internal/gen
+    opt:
+      - paths=source_relative
+  
+  # TypeScript/JavaScript code generation for frontend
+  - remote: buf.build/connectrpc/es
+    out: frontend/lib/gen
+    opt:
+      - target=ts
+      - import_extension=none
+  - remote: buf.build/bufbuild/es
+    out: frontend/lib/gen
+    opt:
+      - target=ts
+      - import_extension=none

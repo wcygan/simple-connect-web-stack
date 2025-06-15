@@ -1,228 +1,386 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with the Simple Connect Web Stack v2 project.
 
 ## Repository Overview
 
-This is the v2 implementation of simple-web-stack, migrating from a Rust/Axum backend to Go/ConnectRPC while maintaining the same Deno Fresh frontend. The project demonstrates a modern todo list application built with:
+Simple Connect Web Stack v2 is a modern todo application migrating from REST (v1) to RPC architecture using ConnectRPC. It maintains the same user experience while leveraging Protocol Buffers for type-safe client-server communication.
 
-- **Frontend**: Deno Fresh 2.0 + Preact (Islands architecture)
-- **Backend**: Go + ConnectRPC (replacing Rust + Axum from v1)
-- **Database**: MySQL 8.0
-- **Protocol**: Protocol Buffers with Buf Schema Registry
+**Key Migration: v1 (Rust/Axum + REST) → v2 (Go/ConnectRPC + Protocol Buffers)**
 
 ## Essential Commands
 
-### Development Setup
+### Development
 ```bash
-# Initialize Go module
-go mod init github.com/wcygan/simple-connect-web-stack
+# Start entire stack
+deno task up
 
-# Install ConnectRPC and Buf tools
-go install github.com/bufbuild/buf/cmd/buf@latest
-go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+# Run frontend only
+cd frontend && deno task dev
 
-# Generate code from proto files
+# Run backend only  
+cd backend && go run ./cmd/server
+
+# Generate code from protobuf
 buf generate
 
-# Run the full stack
-docker-compose up
+# Hot reload development
+deno task dev:all
 ```
 
-### Backend Development
+### Protocol Buffer Management
 ```bash
-# Run Go backend
-go run ./cmd/server
-
-# Run tests
-go test ./...
-
-# Run specific test
-go test -run TestName ./...
-
-# Generate proto code
+# Generate Go server and TypeScript client code
 buf generate
 
-# Lint proto files
+# Lint protobuf files
 buf lint
 
-# Format Go code
-go fmt ./...
+# Check for breaking changes
+buf breaking --against .git#branch=main
+
+# Format protobuf files
+buf format -w
+
+# Push to Buf Schema Registry
+buf push
 ```
 
-### Frontend Development
+### Testing
 ```bash
-# Run frontend dev server
-cd frontend
-deno task dev
-
-# Run frontend tests
+# Run all tests
 deno task test
 
-# Format and lint
-deno fmt
-deno lint
+# Frontend tests
+cd frontend && deno test
+
+# Backend tests
+cd backend && go test ./...
+
+# Integration tests with Docker
+deno task test:integration
+
+# E2E tests
+deno task test:e2e
 ```
 
 ## Architecture Overview
 
-### Migration from v1 to v2
-
-The project is migrating from:
-- **v1**: Rust + Axum backend → **v2**: Go + ConnectRPC backend
-- Same frontend (Deno Fresh 2.0)
-- Same database (MySQL 8.0)
-- Same core features and UI
-
-### ConnectRPC Service Architecture
-
+### Directory Structure
 ```
-Frontend (Port 8000)          Backend (Port 3000)
-    │                              │
-    ├─[HTTP/JSON]─────────────────►│
-    │                              │
-    │  /api/tasks/*               │  ConnectRPC Services
-    │  (Fresh API Routes)         │  ├── TaskService
-    │                             │  │   ├── CreateTask
-    │                             │  │   ├── GetTask
-    │                             │  │   ├── ListTasks
-    │                             │  │   ├── UpdateTask
-    │                             │  │   └── DeleteTask
-    │                             │  └── HealthService
-    │                             │      └── Check
-    │                             │
-    └─────────────────────────────┴──────► MySQL (Port 3306)
+simple-connect-web-stack/
+├── frontend/               # Deno Fresh 2.0 (unchanged architecture)
+│   ├── routes/            # Pages and API proxy
+│   ├── islands/           # Interactive components  
+│   ├── components/        # Static components
+│   └── deno.json         # Frontend tasks
+├── backend/               # Go + ConnectRPC
+│   ├── cmd/server/        # Main server entry
+│   ├── internal/          # Business logic
+│   │   ├── service/       # RPC service implementations
+│   │   ├── db/           # Database operations
+│   │   └── models/       # Domain models
+│   ├── go.mod            # Go dependencies
+│   └── buf.gen.yaml      # Backend code generation
+├── proto/                 # Protocol Buffer definitions
+│   └── todo/
+│       └── v1/
+│           └── todo.proto
+├── buf.yaml              # Buf configuration
+├── buf.gen.yaml          # Root code generation
+└── docker-compose.yml    # Service orchestration
 ```
 
-### Protocol Buffer Definitions
+### Service Communication
 
-Services will be defined in `proto/` directory:
+```
+┌─────────────────┐    ConnectRPC    ┌─────────────────┐    MySQL    ┌─────────────────┐
+│   Frontend      │◄──────────────────►│    Backend      │◄───────────►│    Database     │
+│  Fresh 2.0      │    (HTTP/JSON)     │   Go Server     │   (SQLx)    │    MySQL 8.0    │
+│  Port 8000      │                    │   Port 3000     │             │    Port 3306    │
+└─────────────────┘                    └─────────────────┘             └─────────────────┘
+```
+
+## Protocol Buffer Service Definition
+
+### Core Service (`proto/todo/v1/todo.proto`)
 ```protobuf
-service TaskService {
+syntax = "proto3";
+
+package todo.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service TodoService {
   rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
   rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message Task {
+  string id = 1;                              // UUID
+  string title = 2;                           // Max 255 chars
+  bool completed = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message ListTasksRequest {
+  uint32 page = 1;                            // Default: 1
+  uint32 page_size = 2;                       // Default: 20, Max: 100
+  string query = 3;                           // Search in title
+  string status_filter = 4;                   // "all", "completed", "pending"
+  string sort_by = 5;                         // "created_at", "title", "updated_at"
+  string sort_order = 6;                      // "asc", "desc"
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+  PaginationMetadata pagination = 2;
+}
+
+message PaginationMetadata {
+  uint32 page = 1;
+  uint32 page_size = 2;
+  uint32 total_pages = 3;
+  uint32 total_items = 4;
+  bool has_previous = 5;
+  bool has_next = 6;
 }
 ```
 
-### Key Implementation Details
+## Key Implementation Patterns
 
-**ConnectRPC Benefits**:
-- Type-safe client/server code generation
-- Support for Connect, gRPC, and gRPC-Web protocols
-- Works with standard HTTP clients (curl, fetch)
-- Built-in JSON support for easy debugging
+### Backend Service Implementation (Go)
+```go
+// internal/service/todo.go
+type TodoService struct {
+    db *sql.DB
+}
 
-**Frontend Integration**:
-- Fresh API routes proxy to ConnectRPC backend
-- Can use either JSON (Connect protocol) or binary (gRPC)
-- Maintains same reactive Preact Signals architecture
-
-**Database Layer**:
-- Use `database/sql` with MySQL driver
-- Consider `sqlc` for type-safe SQL queries (similar to SQLx in Rust)
-- Maintain same schema as v1
-
-## Core Features to Implement
-
-1. **No Authentication** - Public todo list (same as v1)
-2. **Full CRUD Operations** - Create, read, update, delete tasks
-3. **Search & Filtering** - By title and completion status
-4. **Pagination** - Efficient handling of large task lists
-5. **Real-time Updates** - Via Preact Signals (frontend)
-
-## Testing Strategy
-
-### Backend Testing
-```bash
-# Unit tests
-go test ./internal/...
-
-# Integration tests with test database
-go test ./tests/integration/... -tags=integration
-
-# Benchmark tests
-go test -bench=. ./...
-
-# Coverage report
-go test -cover ./...
+func (s *TodoService) CreateTask(
+    ctx context.Context,
+    req *connect.Request[todov1.CreateTaskRequest],
+) (*connect.Response[todov1.CreateTaskResponse], error) {
+    // Validate title
+    if req.Msg.Title == "" || len(req.Msg.Title) > 255 {
+        return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid title"))
+    }
+    
+    // Generate UUID and insert
+    task := &todov1.Task{
+        Id:        uuid.NewString(),
+        Title:     req.Msg.Title,
+        Completed: false,
+        CreatedAt: timestamppb.Now(),
+        UpdatedAt: timestamppb.Now(),
+    }
+    
+    // Database operation...
+    
+    return connect.NewResponse(&todov1.CreateTaskResponse{
+        Task: task,
+    }), nil
+}
 ```
 
-### Frontend Testing
-```bash
-# Component tests
-deno test frontend/tests/
+### Frontend RPC Client Integration
+```typescript
+// frontend/lib/api.ts
+import { createPromiseClient } from "@connectrpc/connect";
+import { createConnectTransport } from "@connectrpc/connect-web";
+import { TodoService } from "./gen/todo/v1/todo_connect";
 
-# Run specific test
-deno test --filter "TodoApp"
+const transport = createConnectTransport({
+  baseUrl: "/api",  // Proxied through Fresh
+});
+
+export const todoClient = createPromiseClient(TodoService, transport);
+
+// Usage in islands/TodoApp.tsx
+async function createTask(title: string) {
+  try {
+    const response = await todoClient.createTask({ title });
+    tasks.value = [...tasks.value, response.task];
+  } catch (error) {
+    if (error instanceof ConnectError) {
+      console.error("RPC error:", error.message);
+    }
+  }
+}
+```
+
+### API Proxy Route (Fresh)
+```typescript
+// frontend/routes/api/[...path].ts
+export const handler: Handlers = {
+  async fetch(req) {
+    const url = new URL(req.url);
+    const backendUrl = `http://backend:3000${url.pathname}${url.search}`;
+    
+    // Forward the request to backend
+    const response = await fetch(backendUrl, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    });
+    
+    return response;
+  },
+};
 ```
 
 ## Development Workflow
 
-1. **Proto-First Development**:
-   - Define service contracts in `.proto` files
-   - Generate server/client code with `buf generate`
-   - Implement server handlers
-   - Update frontend API calls
+### Initial Setup
+```bash
+# 1. Generate initial code
+buf generate
 
-2. **Type Safety**:
-   - ConnectRPC generates type-safe Go structs
-   - Frontend maintains TypeScript types
-   - Validate at compile time
+# 2. Install dependencies
+cd frontend && deno cache deps.ts
+cd ../backend && go mod download
 
-3. **Local Development**:
-   - Backend runs on port 3000
-   - Frontend runs on port 8000
-   - MySQL runs on port 3306
-   - All services in Docker Compose for consistency
-
-## Project Structure (Expected)
-
-```
-simple-connect-web-stack/
-├── proto/                 # Protocol Buffer definitions
-│   └── task/
-│       └── v1/
-│           └── task.proto
-├── cmd/
-│   └── server/           # Go server entrypoint
-├── internal/             # Go internal packages
-│   ├── gen/             # Generated ConnectRPC code
-│   ├── service/         # Service implementations
-│   └── db/              # Database layer
-├── frontend/            # Deno Fresh frontend (from v1)
-├── docker-compose.yml   # Full stack orchestration
-├── buf.yaml            # Buf configuration
-└── buf.gen.yaml        # Code generation config
+# 3. Start services
+deno task up
 ```
 
-## Key Differences from v1
+### Adding New RPC Methods
+1. Update `proto/todo/v1/todo.proto` with new method
+2. Run `buf generate` to update code
+3. Implement method in `backend/internal/service/todo.go`
+4. Update frontend to use new method
+5. Add tests for both backend and frontend
 
-- **RPC vs REST**: ConnectRPC provides RPC semantics over HTTP
-- **Code Generation**: Proto files generate both server and client code
-- **Error Handling**: ConnectRPC has built-in error codes and details
-- **Streaming**: Support for server/client/bidirectional streaming (if needed)
-
-## Common ConnectRPC Patterns
-
-### Server Implementation
-```go
-func (s *taskServer) CreateTask(
-    ctx context.Context,
-    req *connect.Request[taskv1.CreateTaskRequest],
-) (*connect.Response[taskv1.CreateTaskResponse], error) {
-    // Implementation
+### Hot Reload Setup
+```json
+// deno.json
+{
+  "tasks": {
+    "dev:all": "docker-compose up -d db && concurrently \"deno task dev:frontend\" \"deno task dev:backend\"",
+    "dev:frontend": "cd frontend && deno task dev",
+    "dev:backend": "cd backend && air", // Using cosmtrek/air for Go hot reload
+  }
 }
 ```
 
-### Client Usage (from frontend or curl)
-```bash
-# Using curl with JSON
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"title": "New task"}' \
-  http://localhost:3000/task.v1.TaskService/CreateTask
+## Testing Strategies
+
+### Backend Testing (Go)
+```go
+// internal/service/todo_test.go
+func TestTodoService_CreateTask(t *testing.T) {
+    // Use in-memory ConnectRPC test server
+    server := httptest.NewServer(
+        http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            connect.ServeHTTP(w, r, NewTodoService(testDB))
+        }),
+    )
+    
+    client := todov1connect.NewTodoServiceClient(
+        http.DefaultClient,
+        server.URL,
+    )
+    
+    // Test cases...
+}
 ```
+
+### Frontend Testing
+```typescript
+// frontend/tests/api_test.ts
+import { createMockClient } from "@connectrpc/connect-mock";
+import { TodoService } from "../lib/gen/todo/v1/todo_connect.ts";
+
+Deno.test("createTask adds task to list", async () => {
+  const mockClient = createMockClient(TodoService, {
+    createTask: { task: mockTask },
+  });
+  
+  // Test component with mock client...
+});
+```
+
+## Migration Guide (v1 REST → v2 RPC)
+
+### Endpoint Mapping
+| v1 REST                     | v2 RPC Method          | Notes                          |
+|-----------------------------|------------------------|--------------------------------|
+| `POST /tasks`               | `CreateTask`           | Returns created task           |
+| `GET /tasks?page=1&q=...`   | `ListTasks`           | Pagination in request message  |
+| `GET /tasks/{id}`           | `GetTask`             | ID in request message          |
+| `PUT /tasks/{id}`           | `UpdateTask`          | Full task update               |
+| `DELETE /tasks/{id}`        | `DeleteTask`          | Returns empty response         |
+| `GET /health`               | `HealthCheck`         | Returns status message         |
+
+### Frontend API Call Migration
+```typescript
+// v1 (REST)
+const response = await fetch('/api/tasks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ title })
+});
+const data = await response.json();
+
+// v2 (ConnectRPC)
+const response = await todoClient.createTask({ title });
+const task = response.task;
+```
+
+## Performance Considerations
+
+### Connection Pooling
+- Backend maintains MySQL connection pool (max 25 connections)
+- Frontend uses HTTP/2 multiplexing for RPC calls
+- Consider implementing request coalescing for list operations
+
+### Caching Strategy
+- No caching in v2 (same as v1) - real-time data priority
+- Browser automatically caches static assets from Fresh
+- Consider adding ETags for list responses if needed
+
+### Optimization Tips
+- Use streaming for large task lists (future enhancement)
+- Implement field masks for partial updates
+- Consider pagination limits based on payload size
+
+## Common Pitfalls & Solutions
+
+### 1. CORS Issues
+- Ensure Fresh proxy correctly forwards all headers
+- ConnectRPC handles CORS automatically for Connect protocol
+
+### 2. Type Mismatches
+- Always regenerate code after proto changes
+- Use `buf breaking` to catch incompatible changes
+
+### 3. Database Timezone
+- Store all timestamps as UTC
+- Convert to user timezone in frontend only
+
+### 4. Error Handling
+- Use ConnectRPC error codes appropriately
+- Map database errors to meaningful RPC errors
+
+## Debugging Commands
+
+```bash
+# Test RPC endpoint directly
+buf curl --schema proto --data '{"title": "Test task"}' http://localhost:3000/todo.v1.TodoService/CreateTask
+
+# Check generated code
+fd -e go -e ts generated
+
+# Validate proto files
+buf lint
+buf breaking --against .git#branch=main
+
+# View RPC logs
+docker-compose logs -f backend
+```
+
+This project demonstrates a clean migration from REST to RPC while maintaining the simplicity and developer experience that made v1 successful.

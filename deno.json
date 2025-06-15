@@ -1,0 +1,27 @@
+{
+  "tasks": {
+    "up": "docker-compose up -d",
+    "down": "docker-compose down",
+    "logs": "docker-compose logs -f",
+    "dev": "docker-compose up -d db && deno task dev:all",
+    "dev:all": "concurrently --kill-others \"deno task dev:frontend\" \"deno task dev:backend\"",
+    "dev:frontend": "cd frontend && deno task dev",
+    "dev:backend": "cd backend && air",
+    "proto:generate": "buf generate",
+    "proto:lint": "buf lint",
+    "proto:breaking": "buf breaking --against .git#branch=main",
+    "test": "deno task test:frontend && deno task test:backend",
+    "test:frontend": "cd frontend && deno test",
+    "test:backend": "cd backend && go test ./...",
+    "test:integration": "docker-compose up -d && deno test tests/integration/",
+    "test:e2e": "docker-compose up -d && deno test tests/e2e/",
+    "clean": "docker-compose down -v && rm -rf backend/internal/gen frontend/lib/gen",
+    "init": "deno task proto:generate && cd backend && go mod download && cd ../frontend && deno cache deps.ts"
+  },
+  "imports": {
+    "@std/fs": "jsr:@std/fs@^1.0.17",
+    "@std/path": "jsr:@std/path@^1.0.9",
+    "@std/assert": "jsr:@std/assert@^1.0.9",
+    "@david/dax": "jsr:@david/dax@^0.42.0"
+  }
+}

@@ -1,0 +1,16 @@
+version: v2
+modules:
+  - path: proto
+    includes:
+      - proto
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX
+  ignore_only:
+    ENUM_ZERO_VALUE_SUFFIX:
+      - proto/todo/v1/todo.proto
