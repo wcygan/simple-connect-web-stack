@@ -8,15 +8,17 @@
     "dev:frontend": "cd frontend && deno task dev",
     "dev:backend": "cd backend && air",
     "proto:generate": "buf generate",
-    "proto:lint": "buf lint",
-    "proto:breaking": "buf breaking --against .git#branch=main",
+    "proto:lint": "cd proto && buf lint",
+    "proto:push": "cd proto && buf push",
+    "proto:breaking": "cd proto && buf breaking --against .git#branch=main",
     "test": "deno task test:frontend && deno task test:backend",
     "test:frontend": "cd frontend && deno test",
     "test:backend": "cd backend && go test ./...",
+    "test:stack": "deno run -A scripts/test-stack.ts",
     "test:integration": "docker-compose up -d && deno test tests/integration/",
     "test:e2e": "docker-compose up -d && deno test tests/e2e/",
     "clean": "docker-compose down -v && rm -rf backend/internal/gen frontend/lib/gen",
-    "init": "deno task proto:generate && cd backend && go mod download && cd ../frontend && deno cache deps.ts"
+    "init": "deno task proto:generate && cd backend && go mod download && cd ../frontend && deno cache main.ts"
   },
   "imports": {
     "@std/fs": "jsr:@std/fs@^1.0.17",
