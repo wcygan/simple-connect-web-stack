@@ -28,7 +28,7 @@
     "monitor": "docker stats",
     "shell:frontend": "docker-compose exec frontend sh",
     "shell:backend": "docker-compose exec backend sh", 
-    "shell:db": "docker-compose exec mysql mysql -u taskuser -ptaskpassword tasks_db",
+    "shell:db": "docker-compose exec mysql mysql -u taskuser -ptaskpassword todos",
     
     // Protocol buffer tasks
     "proto:generate": "buf generate",

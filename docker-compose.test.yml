@@ -18,7 +18,7 @@ services:
       - ./tests/fixtures/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./tests/fixtures/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-utestuser", "-ptestpass"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -64,7 +64,7 @@ services:
       dockerfile: Dockerfile
       target: test  # Use test stage
     ports:
-      - "80071:8007"  # Different port for tests
+      - "8071:8007"  # Different port for tests
     environment:
       PORT: "8007"
       BACKEND_URL: "http://test-backend:3007"

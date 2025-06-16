@@ -1,0 +1,95 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.test
+
+# Generated Protocol Buffer code
+backend/internal/gen/
+frontend/lib/gen/
+
+# Build artifacts
+backend/tmp/
+frontend/_fresh/
+frontend/coverage/
+backend/coverage.out
+backend/coverage.html
+
+# Test results
+test-results/
+playwright-report/
+coverage/
+
+# Dependencies
+node_modules/
+backend/vendor/
+frontend/vendor/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# SSL certificates (keep examples)
+*.key
+*.pem
+*.crt
+!*.example.key
+!*.example.pem
+!*.example.crt
+
+# Docker
+.docker/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Deno
+.deno/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Air (Go hot reload)
+tmp/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.backup
+*.bak
+*.orig

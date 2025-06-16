@@ -1,48 +1,65 @@
 version: '3.8'
 
 services:
-  db:
+  mysql:
     image: mysql:8.0
+    container_name: simple_web_stack_mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: todos
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-todos}
+      MYSQL_USER: ${MYSQL_USER:-taskuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-taskpassword}
     ports:
       - "3307:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 5s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-utaskuser", "-ptaskpassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
 
   backend:
-    build: ./backend
+    container_name: simple_web_stack_backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development  # Use development stage by default
     ports:
       - "3007:3007"
     environment:
-      DATABASE_URL: "root:root@tcp(db:3306)/todos?parseTime=true"
-      PORT: "3007"
+      DATABASE_URL: ${DATABASE_URL:-taskuser:taskpassword@tcp(mysql:3306)/todos?parseTime=true}
+      APP_BIND_ADDRESS: 0.0.0.0:3007
+      GO_ENV: ${GO_ENV:-development}
     depends_on:
-      db:
+      mysql:
         condition: service_healthy
-    # volumes:
-    #   - ./backend:/app
-    # working_dir: /app
-    # command: air
+    volumes:
+      # Mount for hot reload in development
+      - ./backend:/app
+    working_dir: /app
+    command: air
 
   frontend:
-    build: ./frontend
+    container_name: simple_web_stack_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development  # Use development stage by default
     ports:
       - "8007:8007"
     environment:
-      BACKEND_URL: "http://backend:3007"
+      BACKEND_URL: ${BACKEND_URL:-http://backend:3007}
       PORT: "8007"
+      DENO_ENV: ${DENO_ENV:-development}
     depends_on:
       - backend
-    # volumes:
-    #   - ./frontend:/app
-    # working_dir: /app
-    # command: deno task dev
+    volumes:
+      # Mount for hot reload in development
+      - ./frontend:/app
+    working_dir: /app
+    command: ["deno", "run", "-A", "--watch=static/,routes/,islands/,components/", "dev.ts"]
 
 volumes:
-  db_data:
+  mysql_data:
