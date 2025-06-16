@@ -1,19 +1,10 @@
-import { define } from "../../utils.ts";
+import type { FreshContext } from "fresh";
 
-export const handler = define.handlers({
-  async GET(ctx) {
-    return await proxyToBackend(ctx.req);
-  },
-  async POST(ctx) {
-    return await proxyToBackend(ctx.req);
-  },
-  async PUT(ctx) {
-    return await proxyToBackend(ctx.req);
-  },
-  async DELETE(ctx) {
-    return await proxyToBackend(ctx.req);
-  },
-  async OPTIONS(ctx) {
+// Handler that catches all methods and proxies to backend
+export const handler = (ctx: FreshContext): Response | Promise<Response> => {
+  const method = ctx.req.method;
+  
+  if (method === "OPTIONS") {
     return new Response(null, {
       status: 200,
       headers: {
@@ -22,13 +13,15 @@ export const handler = define.handlers({
         "Access-Control-Allow-Headers": "Content-Type, Connect-Protocol-Version",
       },
     });
-  },
-});
+  }
+  
+  return proxyToBackend(ctx.req);
+};
 
 async function proxyToBackend(req: Request): Promise<Response> {
   const url = new URL(req.url);
   // Forward to backend, preserving the path after /api
-  const backendUrl = `${Deno.env.get("BACKEND_URL") || "http://localhost:3000"}${url.pathname.replace('/api', '')}${url.search}`;
+  const backendUrl = `${Deno.env.get("BACKEND_URL") || "http://localhost:3007"}${url.pathname.replace('/api', '')}${url.search}`;
   
   const response = await fetch(backendUrl, {
     method: req.method,

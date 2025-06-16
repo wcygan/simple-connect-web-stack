@@ -1,18 +1,19 @@
-FROM denoland/deno:2.1.4
+# Use pre-built assets approach
+FROM denoland/deno:2.3.6
 
 WORKDIR /app
 
-# Copy deps first for better caching
-COPY deno.json ./
-COPY fresh.gen.ts* ./
-RUN deno cache fresh.gen.ts || true
+# Copy configuration files
+COPY deno.json deno.lock* .npmrc ./
 
-# Copy source code
+# Copy all source files including pre-built _fresh directory
 COPY . .
 
 # Cache dependencies
-RUN deno cache main.ts
+RUN deno cache --reload --node-modules-dir=auto main.ts
 
-EXPOSE 8000
+ENV PORT=8007
+EXPOSE 8007
 
-CMD ["deno", "task", "start"]
+# Run in production mode
+CMD ["deno", "run", "-A", "--node-modules-dir=auto", "main.ts"]

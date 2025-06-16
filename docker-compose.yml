@@ -18,29 +18,31 @@ services:
   backend:
     build: ./backend
     ports:
-      - "3001:3000"
+      - "3007:3007"
     environment:
       DATABASE_URL: "root:root@tcp(db:3306)/todos?parseTime=true"
+      PORT: "3007"
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-    working_dir: /app
-    command: air
+    # volumes:
+    #   - ./backend:/app
+    # working_dir: /app
+    # command: air
 
   frontend:
     build: ./frontend
     ports:
-      - "8001:8000"
+      - "8007:8007"
     environment:
-      BACKEND_URL: "http://backend:3000"
+      BACKEND_URL: "http://backend:3007"
+      PORT: "8007"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-    working_dir: /app
-    command: deno task dev
+    # volumes:
+    #   - ./frontend:/app
+    # working_dir: /app
+    # command: deno task dev
 
 volumes:
   db_data:

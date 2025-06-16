@@ -15,6 +15,6 @@ COPY . .
 # Build the application
 RUN go build -o server ./cmd/server
 
-EXPOSE 3000
+EXPOSE 3007
 
 CMD ["air"]

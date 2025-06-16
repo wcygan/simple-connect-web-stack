@@ -63,15 +63,21 @@ func main() {
 	// Add CORS middleware
 	corsHandler := withCORS(mux)
 
+	// Get port from environment or default to 3007
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3007"
+	}
+
 	// Create server
 	server := &http.Server{
-		Addr:    ":3000",
+		Addr:    ":" + port,
 		Handler: corsHandler,
 	}
 
 	// Start server in goroutine
 	go func() {
-		log.Println("Server starting on :3000")
+		log.Printf("Server starting on :%s", port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}

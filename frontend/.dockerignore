@@ -1,0 +1,18 @@
+# Development files
+.vscode/
+.git/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# But include vendor and node_modules
+!vendor/
+!node_modules/

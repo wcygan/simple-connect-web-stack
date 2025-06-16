@@ -97,7 +97,7 @@ simple-connect-web-stack/
 ┌─────────────────┐    ConnectRPC    ┌─────────────────┐    MySQL    ┌─────────────────┐
 │   Frontend      │◄──────────────────►│    Backend      │◄───────────►│    Database     │
 │  Fresh 2.0      │    (HTTP/JSON)     │   Go Server     │   (SQLx)    │    MySQL 8.0    │
-│  Port 8000      │                    │   Port 3000     │             │    Port 3306    │
+│  Port 8007      │                    │   Port 3007     │             │    Port 3307    │
 └─────────────────┘                    └─────────────────┘             └─────────────────┘
 ```
 
@@ -189,26 +189,25 @@ func (s *TodoService) CreateTask(
 
 ### Frontend RPC Client Integration
 ```typescript
-// frontend/lib/api.ts
-import { createPromiseClient } from "@connectrpc/connect";
+// frontend/islands/TodoApp.tsx
+import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { TodoService } from "./gen/todo/v1/todo_connect";
+import { TodoService } from "@buf/wcygan_simple-connect-web-stack.bufbuild_es/todo/v1/todo_pb.js";
+import type { Task } from "@buf/wcygan_simple-connect-web-stack.bufbuild_es/todo/v1/todo_pb.js";
 
 const transport = createConnectTransport({
   baseUrl: "/api",  // Proxied through Fresh
 });
 
-export const todoClient = createPromiseClient(TodoService, transport);
+const client = createClient(TodoService, transport);
 
-// Usage in islands/TodoApp.tsx
+// Usage in component
 async function createTask(title: string) {
   try {
-    const response = await todoClient.createTask({ title });
-    tasks.value = [...tasks.value, response.task];
+    const response = await client.createTask({ title });
+    tasks.value = [...tasks.value, response.task!];
   } catch (error) {
-    if (error instanceof ConnectError) {
-      console.error("RPC error:", error.message);
-    }
+    console.error("Failed to create task:", error);
   }
 }
 ```
@@ -219,7 +218,7 @@ async function createTask(title: string) {
 export const handler: Handlers = {
   async fetch(req) {
     const url = new URL(req.url);
-    const backendUrl = `http://backend:3000${url.pathname}${url.search}`;
+    const backendUrl = `${Deno.env.get("BACKEND_URL") || "http://localhost:3007"}${url.pathname.replace('/api', '')}${url.search}`;
     
     // Forward the request to backend
     const response = await fetch(backendUrl, {
@@ -237,14 +236,17 @@ export const handler: Handlers = {
 
 ### Initial Setup
 ```bash
-# 1. Generate initial code
+# 1. Generate initial code (optional - we use buf.build packages)
 buf generate
 
 # 2. Install dependencies
-cd frontend && deno cache deps.ts
+cd frontend && deno cache --node-modules-dir main.ts
 cd ../backend && go mod download
 
-# 3. Start services
+# 3. Build frontend for production
+cd frontend && deno task build
+
+# 4. Start services
 deno task up
 ```
 
@@ -348,6 +350,79 @@ const task = response.task;
 - Implement field masks for partial updates
 - Consider pagination limits based on payload size
 
+## Docker Build with buf.build Packages
+
+### Problem
+Docker builds fail when trying to access buf.build npm packages during `deno cache` due to registry authentication issues, even though the packages are public.
+
+### Solution: Pre-built Assets Approach
+
+1. **Build locally first**:
+```bash
+cd frontend && deno task build
+```
+
+2. **Use simplified Dockerfile**:
+```dockerfile
+FROM denoland/deno:2.3.6
+WORKDIR /app
+
+# Copy configuration files
+COPY deno.json deno.lock* .npmrc ./
+
+# Copy all source files including pre-built _fresh directory
+COPY . .
+
+# Cache dependencies
+RUN deno cache --reload --node-modules-dir=auto main.ts
+
+ENV PORT=8007
+EXPOSE 8007
+
+# Run in production mode
+CMD ["deno", "run", "-A", "--node-modules-dir=auto", "main.ts"]
+```
+
+3. **Ensure .npmrc exists**:
+```
+@buf:registry=https://buf.build/gen/npm/v1/
+```
+
+4. **Update .dockerignore** to include _fresh:
+```
+# Development files
+.vscode/
+.git/
+
+# Include pre-built assets
+!_fresh/
+!node_modules/
+```
+
+### Port Configuration
+
+To avoid conflicts with OrbStack and other services:
+
+| Service  | Port |
+|----------|------|
+| Frontend | 8007 |
+| Backend  | 3007 |
+| Database | 3307 |
+
+Configure via environment variables:
+```yaml
+# docker-compose.yml
+services:
+  frontend:
+    environment:
+      PORT: "8007"
+      BACKEND_URL: "http://backend:3007"
+  backend:
+    environment:
+      PORT: "3007"
+      DATABASE_URL: "root:root@tcp(db:3306)/todos?parseTime=true"
+```
+
 ## Common Pitfalls & Solutions
 
 ### 1. CORS Issues
@@ -370,7 +445,7 @@ const task = response.task;
 
 ```bash
 # Test RPC endpoint directly
-buf curl --schema proto --data '{"title": "Test task"}' http://localhost:3000/todo.v1.TodoService/CreateTask
+buf curl --schema proto --data '{"title": "Test task"}' http://localhost:3007/todo.v1.TodoService/CreateTask
 
 # Check generated code
 fd -e go -e ts generated
@@ -382,5 +457,22 @@ buf breaking --against .git#branch=main
 # View RPC logs
 docker-compose logs -f backend
 ```
+
+## Key Learnings
+
+### buf.build npm Packages
+- Public packages don't require authentication tokens
+- Only need `@buf:registry=https://buf.build/gen/npm/v1/` in .npmrc
+- Import directly from npm packages: `@buf/wcygan_simple-connect-web-stack.bufbuild_es`
+
+### Docker Build Strategy
+- Pre-built assets approach is more reliable than building in Docker
+- Avoids ESM module compatibility issues with Fresh build process
+- Faster Docker builds and deterministic results
+
+### Port Management
+- Use environment variables for all port configuration
+- Document port changes clearly to avoid conflicts
+- Default ports: Frontend 8007, Backend 3007, Database 3307
 
 This project demonstrates a clean migration from REST to RPC while maintaining the simplicity and developer experience that made v1 successful.
