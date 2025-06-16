@@ -112,83 +112,137 @@ export default function TodoApp() {
   }));
 
   return (
-    <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="glass-card rounded-2xl p-8 fade-in">
       {/* Error display */}
       {error.value && (
-        <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error.value}
+        <div class="mb-6 alert-error fade-in">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚠️</span>
+            <span class="font-medium">{error.value}</span>
+          </div>
         </div>
       )}
 
       {/* Add task form */}
-      <form onSubmit={createTask} class="mb-6">
-        <div class="flex gap-2">
+      <form onSubmit={createTask} class="mb-8">
+        <div class="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             value={newTaskTitle.value}
             onInput={(e) => newTaskTitle.value = (e.target as HTMLInputElement).value}
-            placeholder="Add a new task..."
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="What needs to be done today? ✨"
+            class="flex-1 enhanced-input"
             disabled={loading.value}
           />
           <button
             type="submit"
             disabled={loading.value || !newTaskTitle.value.trim()}
-            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            class="btn-primary"
           >
-            Add Task
+            {loading.value ? (
+              <div class="flex items-center gap-2">
+                <div class="loading-spinner w-4 h-4"></div>
+                Adding...
+              </div>
+            ) : (
+              <div class="flex items-center gap-2">
+                <span>✨</span>
+                Add Task
+              </div>
+            )}
           </button>
         </div>
       </form>
 
       {/* Task stats */}
-      <div class="mb-4 text-sm text-gray-600">
-        Total: {taskCount.value.total} | 
-        Completed: {taskCount.value.completed} | 
-        Pending: {taskCount.value.pending}
+      <div class="mb-6 stats-card">
+        <div class="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <div class="text-2xl font-bold text-gray-700">{taskCount.value.total}</div>
+            <div class="text-sm text-gray-500 font-medium">Total</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-green-600">{taskCount.value.completed}</div>
+            <div class="text-sm text-gray-500 font-medium">Completed</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-blue-600">{taskCount.value.pending}</div>
+            <div class="text-sm text-gray-500 font-medium">Pending</div>
+          </div>
+        </div>
       </div>
 
       {/* Loading state */}
       {loading.value && tasks.value.length === 0 && (
-        <div class="text-center py-8 text-gray-500">
-          Loading tasks...
+        <div class="text-center py-12 fade-in">
+          <div class="loading-spinner mx-auto mb-4"></div>
+          <div class="text-gray-500 font-medium">Loading your tasks...</div>
         </div>
       )}
 
       {/* Task list */}
-      <div class="space-y-2">
-        {tasks.value.map((task) => (
+      <div class="space-y-3">
+        {tasks.value.map((task, index) => (
           <div
             key={task.id}
-            class="flex items-center gap-3 p-3 border border-gray-200 rounded-md hover:bg-gray-50"
+            class={`task-item group fade-in ${task.completed ? 'completed' : ''}`}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
-            <input
-              type="checkbox"
-              checked={task.completed}
-              onChange={() => toggleTask(task)}
-              disabled={loading.value}
-              class="w-5 h-5 text-blue-600 rounded cursor-pointer"
-            />
-            <span
-              class={`flex-1 ${task.completed ? "line-through text-gray-500" : ""}`}
-            >
-              {task.title}
-            </span>
-            <button
-              onClick={() => deleteTask(task.id)}
-              disabled={loading.value}
-              class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md disabled:text-gray-400"
-            >
-              Delete
-            </button>
+            <div class="flex items-center gap-4">
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={() => toggleTask(task)}
+                disabled={loading.value}
+                class="custom-checkbox"
+              />
+              <span
+                class={`flex-1 font-medium transition-all duration-200 ${
+                  task.completed 
+                    ? "line-through text-gray-500" 
+                    : "text-gray-800"
+                }`}
+              >
+                {task.title}
+              </span>
+              <button
+                onClick={() => deleteTask(task.id)}
+                disabled={loading.value}
+                class="btn-danger opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                title="Delete task"
+              >
+                <span class="flex items-center gap-1">
+                  🗑️
+                  <span class="hidden sm:inline">Delete</span>
+                </span>
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Empty state */}
       {!loading.value && tasks.value.length === 0 && (
-        <div class="text-center py-8 text-gray-500">
-          No tasks yet. Add one above!
+        <div class="text-center py-12 fade-in">
+          <div class="text-6xl mb-4">📝</div>
+          <div class="text-xl font-medium text-gray-600 mb-2">
+            No tasks yet!
+          </div>
+          <div class="text-gray-500">
+            Add your first task above to get started.
+          </div>
+        </div>
+      )}
+
+      {/* Floating progress indicator */}
+      {tasks.value.length > 0 && (
+        <div class="mt-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-2 overflow-hidden">
+          <div 
+            class="h-full bg-white transition-all duration-500 ease-out"
+            style={{ 
+              width: `${taskCount.value.total > 0 ? (taskCount.value.completed / taskCount.value.total) * 100 : 0}%` 
+            }}
+          ></div>
         </div>
       )}
     </div>
