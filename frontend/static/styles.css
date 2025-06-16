@@ -1,80 +1,109 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Minimal global styles for desktop-first design */
 
-/* Apply base styles and modern mesh gradient background */
-@layer base {
-  html {
-    font-feature-settings: 'ss01', 'ss02', 'cv01', 'cv03';
-  }
-  
-  body {
-    @apply bg-background text-text-primary antialiased;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    
-    /* Modern mesh gradient background */
-    background-image:
-      radial-gradient(at 20% 20%, hsla(212, 40%, 20%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 80% 20%, hsla(282, 40%, 20%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 20% 80%, hsla(320, 40%, 20%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 80% 80%, hsla(240, 40%, 20%, 0.3) 0px, transparent 50%);
-  }
+* {
+  box-sizing: border-box;
 }
 
-/* Custom component styles */
-@layer components {
-  /* Enhanced focus styles for accessibility */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
-  }
-  
-  /* Glass morphism variant for special elements */
-  .glass-subtle {
-    @apply bg-surface/80 backdrop-blur-sm border border-border/50;
-  }
-  
-  /* Custom scrollbar for webkit browsers */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-surface rounded-full;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full hover:bg-text-muted;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #111827;
+  color: #e5e7eb;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* Utility overrides and enhancements */
-@layer utilities {
-  /* Smooth scrolling for better UX */
-  .scroll-smooth {
-    scroll-behavior: smooth;
-  }
-  
-  /* Text gradient utility */
-  .text-gradient {
-    background: linear-gradient(135deg, theme('colors.primary'), theme('colors.primary-hover'));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  /* Glow effects */
-  .glow-primary {
-    box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
-  }
-  
-  .glow-success {
-    box-shadow: 0 0 20px rgba(63, 185, 80, 0.3);
-  }
-  
-  .glow-danger {
-    box-shadow: 0 0 20px rgba(248, 81, 73, 0.3);
-  }
+/* Simple scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+/* Remove default button/input styles */
+button, input {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Focus styles */
+:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Utility: Remove spinner from number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Simple animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom checkbox style - compact */
+input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #4b5563;
+  border-radius: 3px;
+  background: #1f2937;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  position: relative;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Ensure full height layouts work properly */
+#__fresh {
+  height: 100%;
+}
+
+/* Additional Tailwind color utilities for gray-850 */
+.bg-gray-850 {
+  background-color: #1a202e;
 }
