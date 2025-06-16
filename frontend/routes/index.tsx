@@ -1,7 +1,6 @@
-import { define } from "../utils.ts";
 import TodoApp from "../islands/TodoApp.tsx";
 
-export default define.page(function Home() {
+export default function Home() {
   return (
     <div class="min-h-screen bg-gray-100">
       <div class="max-w-4xl mx-auto py-8 px-4">
@@ -13,4 +12,4 @@ export default define.page(function Home() {
       </div>
     </div>
   );
-});
+}

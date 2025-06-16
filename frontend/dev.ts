@@ -8,5 +8,9 @@ const builder = new Builder();
 if (Deno.args.includes("build")) {
   await builder.build(app);
 } else {
-  await builder.listen(app);
+  const port = parseInt(Deno.env.get("PORT") || "8007");
+  await builder.listen(app, {
+    port: port,
+    hostname: "0.0.0.0",
+  });
 }

@@ -1,16 +1,16 @@
 import { useSignal, useComputed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { createPromiseClient } from "@connectrpc/connect";
+import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { TodoService } from "../lib/gen/todo/v1/todo_connect.ts";
-import type { Task } from "../lib/gen/todo/v1/todo_pb.ts";
+import { TodoService } from "@buf/wcygan_simple-connect-web-stack.bufbuild_es/todo/v1/todo_pb.js";
+import type { Task } from "@buf/wcygan_simple-connect-web-stack.bufbuild_es/todo/v1/todo_pb.js";
 
 // Create the RPC client
 const transport = createConnectTransport({
   baseUrl: "/api",
 });
 
-const client = createPromiseClient(TodoService, transport);
+const client = createClient(TodoService, transport);
 
 export default function TodoApp() {
   const tasks = useSignal<Task[]>([]);

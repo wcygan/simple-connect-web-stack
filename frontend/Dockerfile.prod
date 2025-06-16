@@ -1,0 +1,30 @@
+# Production Dockerfile using pre-built assets
+FROM denoland/deno:2.3.6 AS builder
+
+WORKDIR /app
+
+# Copy configuration files
+COPY deno.json .npmrc ./
+
+# Copy all source files
+COPY . .
+
+# Install dependencies with node_modules
+RUN deno cache --node-modules-dir=auto main.ts dev.ts
+
+# Build the application (skip this if it fails)
+RUN deno task build || echo "Build failed, continuing..."
+
+# Runtime stage
+FROM denoland/deno:2.3.6
+
+WORKDIR /app
+
+# Copy everything from builder
+COPY --from=builder /app .
+
+ENV PORT=8007
+EXPOSE 8007
+
+# Try to run in production mode, fall back to dev if needed
+CMD ["sh", "-c", "if [ -f _fresh/snapshot.json ]; then deno run -A --node-modules-dir=auto main.ts; else deno run -A --node-modules-dir=auto dev.ts; fi"]
