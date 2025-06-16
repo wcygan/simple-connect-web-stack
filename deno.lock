@@ -6,6 +6,7 @@
     "jsr:@david/which@~0.4.1": "0.4.1",
     "jsr:@std/assert@0.221": "0.221.0",
     "jsr:@std/assert@^1.0.9": "1.0.13",
+    "jsr:@std/async@^1.0.7": "1.0.13",
     "jsr:@std/bytes@0.221": "0.221.0",
     "jsr:@std/fmt@1": "1.0.8",
     "jsr:@std/fs@1": "1.0.18",
@@ -16,7 +17,6 @@
     "jsr:@std/path@^1.0.9": "1.1.0",
     "jsr:@std/path@^1.1.0": "1.1.0",
     "jsr:@std/streams@0.221": "0.221.0",
-    "npm:@buf/wcygan_simple-connect-web-stack.connectrpc_query-es@^2.1.0-20250615194027-1ba9625cc7f0.1": "2.1.0-20250615194027-1ba9625cc7f0.1_@bufbuild+protobuf@2.5.2_@connectrpc+connect-query@2.1.0__@bufbuild+protobuf@2.5.2__@connectrpc+connect@2.0.2___@bufbuild+protobuf@2.5.2__@tanstack+react-query@5.80.7___react@19.1.0__react@19.1.0__react-dom@19.1.0___react@19.1.0",
     "npm:@types/node@*": "22.15.15"
   },
   "jsr": {
@@ -51,6 +51,9 @@
         "jsr:@std/internal"
       ]
     },
+    "@std/async@1.0.13": {
+      "integrity": "1d76ca5d324aef249908f7f7fe0d39aaf53198e5420604a59ab5c035adc97c96"
+    },
     "@std/bytes@0.221.0": {
       "integrity": "64a047011cf833890a4a2ab7293ac55a1b4f5a050624ebc6a0159c357de91966"
     },
@@ -84,76 +87,11 @@
     }
   },
   "npm": {
-    "@buf/wcygan_simple-connect-web-stack.bufbuild_es@2.4.0-20250615194027-1ba9625cc7f0.1_@bufbuild+protobuf@2.5.2": {
-      "dependencies": [
-        "@bufbuild/protobuf"
-      ],
-      "tarball": "https://buf.build/gen/npm/v1/@buf/wcygan_simple-connect-web-stack.bufbuild_es/-/wcygan_simple-connect-web-stack.bufbuild_es-2.4.0-20250615194027-1ba9625cc7f0.1.tgz"
-    },
-    "@buf/wcygan_simple-connect-web-stack.connectrpc_query-es@2.1.0-20250615194027-1ba9625cc7f0.1_@bufbuild+protobuf@2.5.2_@connectrpc+connect-query@2.1.0__@bufbuild+protobuf@2.5.2__@connectrpc+connect@2.0.2___@bufbuild+protobuf@2.5.2__@tanstack+react-query@5.80.7___react@19.1.0__react@19.1.0__react-dom@19.1.0___react@19.1.0": {
-      "dependencies": [
-        "@buf/wcygan_simple-connect-web-stack.bufbuild_es",
-        "@bufbuild/protobuf",
-        "@connectrpc/connect-query"
-      ],
-      "tarball": "https://buf.build/gen/npm/v1/@buf/wcygan_simple-connect-web-stack.connectrpc_query-es/-/wcygan_simple-connect-web-stack.connectrpc_query-es-2.1.0-20250615194027-1ba9625cc7f0.1.tgz"
-    },
-    "@bufbuild/protobuf@2.5.2": {
-      "integrity": "sha512-foZ7qr0IsUBjzWIq+SuBLfdQCpJ1j8cTuNNT4owngTHoN5KsJb8L9t65fzz7SCeSWzescoOil/0ldqiL041ABg=="
-    },
-    "@connectrpc/connect-query-core@2.1.0_@bufbuild+protobuf@2.5.2_@connectrpc+connect@2.0.2__@bufbuild+protobuf@2.5.2_@tanstack+query-core@5.80.7": {
-      "integrity": "sha512-lkBLMW8sIEkAgoUMe6DUEQ+vFwLc5TPjtkmFWW2rFPdkYgWw+gFJeHiMVUw+20K2zS3Ly5NPVWUtkl2kwgrZQQ==",
-      "dependencies": [
-        "@bufbuild/protobuf",
-        "@connectrpc/connect",
-        "@tanstack/query-core"
-      ]
-    },
-    "@connectrpc/connect-query@2.1.0_@bufbuild+protobuf@2.5.2_@connectrpc+connect@2.0.2__@bufbuild+protobuf@2.5.2_@tanstack+react-query@5.80.7__react@19.1.0_react@19.1.0_react-dom@19.1.0__react@19.1.0": {
-      "integrity": "sha512-y0g+/CxWDL2xAhOeisOZqRQT4/bqbUKe3oNSyCdH31EL3+DCBNTv0tM+Mkw8WaxYr3q10z0eeJinjOG2R7fxxQ==",
-      "dependencies": [
-        "@bufbuild/protobuf",
-        "@connectrpc/connect",
-        "@connectrpc/connect-query-core",
-        "@tanstack/react-query",
-        "react",
-        "react-dom"
-      ]
-    },
-    "@connectrpc/connect@2.0.2_@bufbuild+protobuf@2.5.2": {
-      "integrity": "sha512-xZuylIUNvNlH52e/4eQsZvY4QZyDJRtEFEDnn/yBrv5Xi5ZZI/p8X+GAHH35ucVaBvv9u7OzHZo8+tEh1EFTxA==",
-      "dependencies": [
-        "@bufbuild/protobuf"
-      ]
-    },
-    "@tanstack/query-core@5.80.7": {
-      "integrity": "sha512-s09l5zeUKC8q7DCCCIkVSns8zZrK4ZDT6ryEjxNBFi68G4z2EBobBS7rdOY3r6W1WbUDpc1fe5oY+YO/+2UVUg=="
-    },
-    "@tanstack/react-query@5.80.7_react@19.1.0": {
-      "integrity": "sha512-u2F0VK6+anItoEvB3+rfvTO9GEh2vb00Je05OwlUe/A0lkJBgW1HckiY3f9YZa+jx6IOe4dHPh10dyp9aY3iRQ==",
-      "dependencies": [
-        "@tanstack/query-core",
-        "react"
-      ]
-    },
     "@types/node@22.15.15": {
       "integrity": "sha512-R5muMcZob3/Jjchn5LcO8jdKwSCbzqmPB6ruBxMcf9kbxtniZHP327s6C37iOfuw8mbKK3cAQa7sEl7afLrQ8A==",
       "dependencies": [
         "undici-types"
       ]
-    },
-    "react-dom@19.1.0_react@19.1.0": {
-      "integrity": "sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==",
-      "dependencies": [
-        "react",
-        "scheduler"
-      ]
-    },
-    "react@19.1.0": {
-      "integrity": "sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg=="
-    },
-    "scheduler@0.26.0": {
-      "integrity": "sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA=="
     },
     "undici-types@6.21.0": {
       "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="
@@ -163,9 +101,10 @@
     "dependencies": [
       "jsr:@david/dax@0.42",
       "jsr:@std/assert@^1.0.9",
+      "jsr:@std/async@^1.0.7",
       "jsr:@std/fs@^1.0.17",
       "jsr:@std/path@^1.0.9",
-      "npm:@buf/wcygan_simple-connect-web-stack.connectrpc_query-es@^2.1.0-20250615194027-1ba9625cc7f0.1"
+      "jsr:@std/testing@^1.0.2"
     ]
   }
 }

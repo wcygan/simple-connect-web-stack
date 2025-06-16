@@ -1,5 +1,6 @@
 {
   "tasks": {
+    // Development tasks
     "up": "docker-compose up -d",
     "down": "docker-compose down",
     "logs": "docker-compose logs -f",
@@ -7,23 +8,67 @@
     "dev:all": "concurrently --kill-others \"deno task dev:frontend\" \"deno task dev:backend\"",
     "dev:frontend": "cd frontend && deno task dev",
     "dev:backend": "cd backend && air",
+    
+    // Protocol buffer tasks
     "proto:generate": "buf generate",
     "proto:lint": "cd proto && buf lint",
     "proto:push": "cd proto && buf push",
     "proto:breaking": "cd proto && buf breaking --against .git#branch=main",
-    "test": "deno task test:frontend && deno task test:backend",
-    "test:frontend": "cd frontend && deno test",
-    "test:backend": "cd backend && go test ./...",
+    
+    // Testing tasks - comprehensive Docker-based testing
+    "test": "deno task test:all",
+    "test:all": "deno run -A scripts/test-all.ts",
+    "test:unit": "deno task test:unit:frontend && deno task test:unit:backend",
+    "test:unit:frontend": "cd frontend && deno test --coverage=./coverage",
+    "test:unit:backend": "cd backend && go test -v -coverprofile=coverage.out ./...",
+    "test:integration": "docker-compose -f docker-compose.test.yml up --build test-runner --profile test",
+    "test:e2e": "docker-compose -f docker-compose.test.yml up --build playwright --profile e2e",
     "test:stack": "deno run -A scripts/test-stack.ts",
-    "test:integration": "docker-compose up -d && deno test tests/integration/",
-    "test:e2e": "docker-compose up -d && deno test tests/e2e/",
-    "clean": "docker-compose down -v && rm -rf backend/internal/gen frontend/lib/gen",
+    
+    // Test environment management
+    "test:setup": "docker-compose -f docker-compose.test.yml up -d test-db",
+    "test:teardown": "docker-compose -f docker-compose.test.yml down -v",
+    "test:clean": "docker-compose -f docker-compose.test.yml down -v && docker system prune -f",
+    "test:reset": "deno task test:teardown && deno task test:setup",
+    
+    // Test development helpers
+    "test:watch": "deno task test:watch:frontend",
+    "test:watch:frontend": "cd frontend && deno test --watch",
+    "test:watch:backend": "cd backend && gotestsum --watch -- -v ./...",
+    "test:debug": "deno task test:setup && deno run -A --inspect-brk scripts/test-debug.ts",
+    
+    // Test reporting and analysis
+    "test:coverage": "deno task test:coverage:frontend && deno task test:coverage:backend",
+    "test:coverage:frontend": "cd frontend && deno test --coverage=./coverage && deno coverage ./coverage --html",
+    "test:coverage:backend": "cd backend && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html",
+    "test:report": "deno run -A scripts/test-report.ts",
+    
+    // Performance and load testing
+    "test:performance": "deno run -A scripts/test-performance.ts",
+    "test:load": "docker-compose -f docker-compose.test.yml run --rm test-runner deno run -A scripts/test-load.ts",
+    
+    // Database testing
+    "test:db": "deno run -A scripts/test-database.ts",
+    "test:db:migration": "deno run -A scripts/test-db-migration.ts",
+    "test:db:seed": "docker-compose -f docker-compose.test.yml exec test-db mysql -u testuser -ptestpass test_tasks_db < tests/fixtures/seed.sql",
+    
+    // CI/CD helpers
+    "test:ci": "deno task test:unit && deno task test:integration && deno task test:e2e",
+    "test:ci:unit": "deno task test:unit",
+    "test:ci:integration": "docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit test-runner",
+    "test:ci:e2e": "docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit playwright",
+    
+    // Cleanup and maintenance
+    "clean": "docker-compose down -v && docker-compose -f docker-compose.test.yml down -v && rm -rf backend/internal/gen frontend/lib/gen",
+    "clean:test": "rm -rf test-results/ frontend/coverage/ backend/coverage.out backend/coverage.html",
     "init": "deno task proto:generate && cd backend && go mod download && cd ../frontend && deno cache main.ts"
   },
   "imports": {
     "@std/fs": "jsr:@std/fs@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
     "@std/assert": "jsr:@std/assert@^1.0.9",
+    "@std/testing": "jsr:@std/testing@^1.0.2",
+    "@std/async": "jsr:@std/async@^1.0.7",
     "@david/dax": "jsr:@david/dax@^0.42.0"
   }
 }

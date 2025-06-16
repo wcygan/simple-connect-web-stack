@@ -1414,6 +1414,8 @@
     "dependencies": [
       "jsr:@fresh/core@^2.0.0-alpha.22",
       "jsr:@fresh/plugin-tailwind@^0.0.1-alpha.7",
+      "jsr:@std/assert@^1.0.9",
+      "jsr:@std/testing@^1.0.2",
       "npm:@buf/wcygan_simple-connect-web-stack.bufbuild_es@^2.5.2-20250615194027-1ba9625cc7f0.1",
       "npm:@buf/wcygan_simple-connect-web-stack.connectrpc_query-es@^2.1.0-20250615194027-1ba9625cc7f0.1",
       "npm:@bufbuild/protobuf@^2.2.0",

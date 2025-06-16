@@ -1,0 +1,140 @@
+version: '3.8'
+
+# Isolated testing environment with dedicated test services
+services:
+  # Test database with fixtures and faster configuration
+  test-db:
+    image: mysql:8.0
+    container_name: simple_web_stack_test_db
+    ports:
+      - "33061:3306"  # Different port to avoid conflicts
+    environment:
+      MYSQL_ROOT_PASSWORD: testroot
+      MYSQL_DATABASE: test_tasks_db
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpass
+    volumes:
+      - test_mysql_data:/var/lib/mysql
+      - ./tests/fixtures/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./tests/fixtures/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - test-network
+    # Optimize for testing speed
+    command: >
+      --innodb-flush-log-at-trx-commit=0
+      --innodb-flush-method=O_DIRECT
+      --innodb-buffer-pool-size=128M
+      --skip-log-bin
+
+  # Backend service for integration tests
+  test-backend:
+    container_name: simple_web_stack_test_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: test  # Use test stage
+    ports:
+      - "30071:3007"  # Different port for tests
+    environment:
+      DATABASE_URL: mysql://testuser:testpass@test-db:3306/test_tasks_db?parseTime=true
+      APP_BIND_ADDRESS: 0.0.0.0:3007
+      GO_ENV: test
+      TEST_MODE: "true"
+    depends_on:
+      test-db:
+        condition: service_healthy
+    networks:
+      - test-network
+    volumes:
+      # Mount test data and configurations
+      - ./tests/backend:/app/tests
+      - ./tests/fixtures:/app/fixtures:ro
+
+  # Frontend service for e2e tests
+  test-frontend:
+    container_name: simple_web_stack_test_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: test  # Use test stage
+    ports:
+      - "80071:8007"  # Different port for tests
+    environment:
+      PORT: "8007"
+      BACKEND_URL: "http://test-backend:3007"
+      DENO_ENV: test
+      NODE_ENV: test
+    depends_on:
+      - test-backend
+    networks:
+      - test-network
+    volumes:
+      # Mount test files
+      - ./tests/frontend:/app/tests
+      - ./frontend/tests:/app/app-tests
+
+  # Test runner service for integration and e2e tests
+  test-runner:
+    container_name: simple_web_stack_test_runner
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      TEST_BACKEND_URL: "http://test-backend:3007"
+      TEST_FRONTEND_URL: "http://test-frontend:8007"
+      TEST_DB_URL: "mysql://testuser:testpass@test-db:3306/test_tasks_db"
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-backend:
+        condition: service_started
+      test-frontend:
+        condition: service_started
+    networks:
+      - test-network
+    volumes:
+      - .:/workspace
+      - test_results:/workspace/test-results
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # For testcontainers if needed
+    working_dir: /workspace
+    profiles:
+      - test  # Only start when explicitly requested
+
+  # Playwright service for browser testing
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.41.0-focal
+    container_name: simple_web_stack_playwright
+    environment:
+      TEST_BASE_URL: "http://test-frontend:8007"
+      BACKEND_API_URL: "http://test-backend:3007"
+    depends_on:
+      - test-frontend
+      - test-backend
+    networks:
+      - test-network
+    volumes:
+      - ./tests/e2e:/tests
+      - test_results:/test-results
+    working_dir: /tests
+    profiles:
+      - e2e  # Only start for e2e tests
+
+volumes:
+  test_mysql_data:
+    driver: local
+  test_results:
+    driver: local
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
