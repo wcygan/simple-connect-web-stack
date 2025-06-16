@@ -12,9 +12,9 @@ interface AppShellProps {
 
 export function AppShell({ children, stats }: AppShellProps) {
   return (
-    <div class="min-h-screen flex flex-col">
+    <div class="min-h-screen flex flex-col relative">
       <TopBar stats={stats} />
-      <main class="flex-1 flex flex-col items-center px-4 py-8">
+      <main class="flex-1 flex flex-col items-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div class="w-full max-w-container animate-fade-in">
           {children}
         </div>

@@ -19,6 +19,10 @@ export default {
           hover: 'rgba(255, 255, 255, 0.08)',
           border: 'rgba(255, 255, 255, 0.1)',
         },
+        gray: {
+          850: '#18181f',
+          950: '#0a0a0f',
+        },
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -37,7 +41,9 @@ export default {
       },
       maxWidth: {
         '2xs': '16rem',
-        'container': '640px',
+        'container': '720px',
+        'container-sm': '640px',
+        'container-lg': '1152px',
       },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',

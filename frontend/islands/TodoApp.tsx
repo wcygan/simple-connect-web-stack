@@ -85,18 +85,19 @@ export default function TodoApp() {
 
   return (
     <AppShell stats={taskStats.value}>
-      <div class="space-y-6">
+      <div class="space-y-6 sm:space-y-8">
         {/* Error Alert */}
         {error.value && (
-          <div class="glass border border-red-500/30 bg-red-500/10 rounded-lg p-4 animate-slide-in">
-            <div class="flex items-center justify-between">
-              <p class="text-sm text-red-300">{error.value}</p>
+          <div class="bg-red-950/50 border border-red-500/30 rounded-lg p-4 animate-slide-in">
+            <div class="flex items-center justify-between gap-4">
+              <p class="text-sm text-red-200">{error.value}</p>
               <button
                 onClick={() => error.value = null}
-                class="text-red-400 hover:text-red-300 transition-colors p-1"
+                class="text-red-400 hover:text-red-300 transition-colors p-1 rounded hover:bg-red-950/50"
+                aria-label="Dismiss error"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -104,8 +105,8 @@ export default function TodoApp() {
         )}
 
         {/* Add Task Section */}
-        <div class="glass rounded-xl p-4 sm:p-6 shadow-soft">
-          <h2 class="text-base sm:text-lg font-semibold mb-4">What needs to be done?</h2>
+        <div class="glass rounded-xl p-6 sm:p-8 shadow-lg">
+          <h2 class="text-xl sm:text-2xl font-bold mb-6 text-gray-100">Add a new task</h2>
           <AddTaskForm
             value={newTaskTitle.value}
             onChange={(v) => newTaskTitle.value = v}
@@ -115,7 +116,8 @@ export default function TodoApp() {
         </div>
 
         {/* Tasks List */}
-        <div class="glass rounded-xl p-4 sm:p-6 shadow-soft min-h-[400px]">
+        <div class="glass rounded-xl p-6 sm:p-8 shadow-lg">
+          <h2 class="text-lg sm:text-xl font-bold mb-6 text-gray-100">Your tasks</h2>
           <TaskList
             tasks={tasks.value}
             loading={loading.value}
