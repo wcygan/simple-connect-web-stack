@@ -79,10 +79,15 @@ export default function TodoApp() {
 
   return (
     <AppShell>
-      <div class="glass rounded-xl shadow-soft p-6 sm:p-8 space-y-6">
-        <h1 class="text-2xl font-bold text-center mb-4">
-          My&nbsp;Todo&nbsp;List
-        </h1>
+      <div class="glass rounded-xl shadow-premium p-6 sm:p-8 space-y-6">
+        <div class="text-center mb-6">
+          <h1 class="text-3xl font-bold bg-gradient-to-r from-white via-indigo-100 to-purple-100 bg-clip-text text-transparent mb-2">
+            My Todo List
+          </h1>
+          <p class="text-slate-400 text-sm font-medium">
+            Stay organized, stay productive
+          </p>
+        </div>
 
         {/* Error Alert */}
         {error.value && (

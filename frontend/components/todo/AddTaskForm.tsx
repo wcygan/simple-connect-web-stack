@@ -22,7 +22,7 @@ export function AddTaskForm({ value, onChange, onSubmit, isLoading }: AddTaskFor
       <button
         type="submit"
         disabled={!value.trim() || isLoading}
-        class="px-6 py-3 bg-primary hover:bg-primary-light disabled:bg-gray-700 disabled:text-gray-400 text-white font-semibold rounded-lg transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg disabled:shadow-none whitespace-nowrap disabled:opacity-60"
+        class="px-6 py-3 bg-primary hover:bg-primary-light disabled:bg-gray-700 disabled:text-gray-400 text-white font-semibold rounded-lg hover-glow disabled:cursor-not-allowed shadow-md hover:shadow-lg disabled:shadow-none whitespace-nowrap disabled:opacity-60"
       >
         {isLoading ? (
           <span class="flex items-center gap-2">

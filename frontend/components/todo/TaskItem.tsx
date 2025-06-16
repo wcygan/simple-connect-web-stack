@@ -15,7 +15,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
     : '';
 
   return (
-    <div class="group bg-white/[0.05] hover:bg-white/[0.08] border border-white/15 hover:border-white/25 rounded-lg p-4 transition-all duration-200 hover:shadow-md">
+    <div class="group bg-white/[0.05] hover:bg-white/[0.08] border border-white/15 hover:border-white/25 rounded-lg p-4 hover-lift animate-scale-in">
       <div class="flex items-center gap-4">
         <input
           type="checkbox"
