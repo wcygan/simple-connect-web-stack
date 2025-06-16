@@ -11,9 +11,9 @@ interface TaskListProps {
 export function TaskList({ tasks, loading, onToggle, onDelete }: TaskListProps) {
   if (loading) {
     return (
-      <div class="p-4 space-y-2">
+      <div class="space-y-3">
         {[...Array(5)].map((_, i) => (
-          <div key={i} class="h-8 bg-gray-800 rounded animate-pulse" />
+          <div key={i} class="h-16 bg-surface rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -21,30 +21,33 @@ export function TaskList({ tasks, loading, onToggle, onDelete }: TaskListProps) 
 
   if (tasks.length === 0) {
     return (
-      <div class="flex-1 flex items-center justify-center text-gray-500">
-        <div class="text-center">
-          <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      <div class="flex flex-col items-center justify-center py-16 text-gray-400">
+        <div class="w-20 h-20 mb-6 rounded-full bg-surface flex items-center justify-center">
+          <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p class="text-sm">No tasks yet</p>
-          <p class="text-xs mt-1">Add one above to get started</p>
         </div>
+        <p class="text-lg font-medium text-gray-300">No tasks yet</p>
+        <p class="text-sm mt-2 text-gray-500">Add your first task to get started</p>
       </div>
     );
   }
 
   return (
-    <div class="flex-1 overflow-y-auto">
-      <div class="p-2">
-        {tasks.map((task) => (
+    <div class="space-y-3">
+      {tasks.map((task, index) => (
+        <div
+          key={task.id}
+          class="animate-slide-in"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
           <TaskItem
-            key={task.id}
             task={task}
             onToggle={onToggle}
             onDelete={onDelete}
           />
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
