@@ -5,6 +5,16 @@ All notable changes to the Simple Connect Web Stack project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🐛 Bug Fixes
+
+- **fix(frontend)**: Resolve ESM module error in Docker environment
+  - Fixed module resolution conflicts between `vendor: true` and `nodeModulesDir: "auto"`
+  - Updated Docker configuration to properly cache buf.build npm dependencies
+  - Simplified frontend development command for consistency with V1 setup
+  - Added pre-build step in Dockerfile to generate Fresh files and avoid ESM issues
+
 ## [2.0.0] - 2025-06-16
 
 ### 🚀 Features

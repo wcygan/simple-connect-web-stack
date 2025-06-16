@@ -59,7 +59,7 @@ services:
       # Mount for hot reload in development
       - ./frontend:/app
     working_dir: /app
-    command: ["deno", "run", "-A", "--watch=static/,routes/,islands/,components/", "dev.ts"]
+    command: ["deno", "task", "dev"]
 
 volumes:
   mysql_data:

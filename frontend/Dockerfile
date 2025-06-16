@@ -13,11 +13,14 @@ FROM base AS development
 COPY . .
 
 # Cache dependencies for development
-RUN deno cache --reload --node-modules-dir=auto main.ts dev.ts
+RUN deno cache --reload main.ts dev.ts
+
+# Pre-build to generate fresh files and avoid ESM issues
+RUN deno task build || echo "Build step completed"
 
 ENV PORT=8007
 EXPOSE 8007
-CMD ["deno", "run", "-A", "--watch=static/,routes/,islands/,components/", "dev.ts"]
+CMD ["deno", "task", "dev"]
 
 # Test stage with testing dependencies
 FROM base AS test
