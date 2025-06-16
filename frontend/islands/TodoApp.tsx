@@ -1,4 +1,4 @@
-import { useSignal, useComputed } from "@preact/signals";
+import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
@@ -77,15 +77,13 @@ export default function TodoApp() {
     }
   }
 
-  const taskStats = useComputed(() => ({
-    total: tasks.value.length,
-    completed: tasks.value.filter(t => t.completed).length,
-    pending: tasks.value.filter(t => !t.completed).length,
-  }));
-
   return (
-    <AppShell stats={taskStats.value}>
-      <div class="space-y-6 sm:space-y-8">
+    <AppShell>
+      <div class="glass rounded-xl shadow-soft p-6 sm:p-8 space-y-6">
+        <h1 class="text-2xl font-bold text-center mb-4">
+          My&nbsp;Todo&nbsp;List
+        </h1>
+
         {/* Error Alert */}
         {error.value && (
           <div class="bg-red-950/50 border border-red-500/30 rounded-lg p-4 animate-slide-in">
@@ -104,27 +102,21 @@ export default function TodoApp() {
           </div>
         )}
 
-        {/* Add Task Section */}
-        <div class="glass rounded-xl p-6 sm:p-8 shadow-lg">
-          <h2 class="text-xl sm:text-2xl font-bold mb-6 text-gray-100">Add a new task</h2>
-          <AddTaskForm
-            value={newTaskTitle.value}
-            onChange={(v) => newTaskTitle.value = v}
-            onSubmit={createTask}
-            isLoading={isAdding.value}
-          />
-        </div>
+        {/* Add-task input */}
+        <AddTaskForm
+          value={newTaskTitle.value}
+          onChange={(v) => (newTaskTitle.value = v)}
+          onSubmit={createTask}
+          isLoading={isAdding.value}
+        />
 
-        {/* Tasks List */}
-        <div class="glass rounded-xl p-6 sm:p-8 shadow-lg">
-          <h2 class="text-lg sm:text-xl font-bold mb-6 text-gray-100">Your tasks</h2>
-          <TaskList
-            tasks={tasks.value}
-            loading={loading.value}
-            onToggle={toggleTask}
-            onDelete={deleteTask}
-          />
-        </div>
+        {/* Tasks list */}
+        <TaskList
+          tasks={tasks.value}
+          loading={loading.value}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+        />
       </div>
     </AppShell>
   );

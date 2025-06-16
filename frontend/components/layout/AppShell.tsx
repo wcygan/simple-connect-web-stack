@@ -1,24 +1,15 @@
 import { ComponentChildren } from "preact";
-import { TopBar } from "./TopBar.tsx";
 
 interface AppShellProps {
   children: ComponentChildren;
-  stats?: {
-    total: number;
-    completed: number;
-    pending: number;
-  };
 }
 
-export function AppShell({ children, stats }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
+  // Full-height flexbox that keeps its contents perfectly centred
   return (
-    <div class="min-h-screen flex flex-col relative">
-      <TopBar stats={stats} />
-      <main class="flex-1 flex flex-col items-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div class="w-full max-w-container animate-fade-in">
-          {children}
-        </div>
-      </main>
+    <div class="min-h-screen flex items-center justify-center px-4">
+      {/* Card wrapper – max-width stays narrow like V1, scales down on mobile */}
+      <div class="w-full max-w-md">{children}</div>
     </div>
   );
 }
