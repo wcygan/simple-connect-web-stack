@@ -425,19 +425,45 @@ services:
 
 ## Common Pitfalls & Solutions
 
-### 1. CORS Issues
+### 1. Fresh 2.0 Alpha Tailwind Plugin Issues
+**Problem**: UI appears left-aligned instead of centered, Tailwind classes present in HTML but not working.
+**Root Cause**: `@fresh/plugin-tailwind@^0.0.1-alpha.7` doesn't reliably generate CSS utilities.
+**Solution**: Add fallback CSS utilities directly to `static/styles.css`:
+
+```css
+/* Essential Tailwind utility classes for centering (fallback for Fresh 2.0 alpha issues) */
+.min-h-screen { min-height: 100vh; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.w-full { width: 100%; }
+.max-w-md { max-width: 28rem; }
+/* Add other utilities as needed */
+```
+
+**Verification**:
+```bash
+# Check if Tailwind classes are being served
+curl -s "http://localhost:8007/styles.css" | grep -E "(min-h-screen|flex|items-center)"
+
+# Verify HTML structure has correct classes
+curl -s "http://localhost:8007" | grep -o 'class="min-h-screen[^"]*"'
+```
+
+### 2. CORS Issues
 - Ensure Fresh proxy correctly forwards all headers
 - ConnectRPC handles CORS automatically for Connect protocol
 
-### 2. Type Mismatches
+### 3. Type Mismatches
 - Always regenerate code after proto changes
 - Use `buf breaking` to catch incompatible changes
 
-### 3. Database Timezone
+### 4. Database Timezone
 - Store all timestamps as UTC
 - Convert to user timezone in frontend only
 
-### 4. Error Handling
+### 5. Error Handling
 - Use ConnectRPC error codes appropriately
 - Map database errors to meaningful RPC errors
 
@@ -460,6 +486,19 @@ docker-compose logs -f backend
 
 ## Key Learnings
 
+### Fresh 2.0 Alpha Considerations
+- **Production Ready**: Fresh 2.0 alpha is stable enough for production (powers deno.com)
+- **Plugin Ecosystem**: Alpha plugins may have incomplete functionality (especially Tailwind)
+- **Fallback Strategies**: Always implement CSS fallbacks for critical styling
+- **JSR Imports**: Use `jsr:@fresh/core@^2.0.0-alpha.22` over deno.land URLs
+- **Stable Timeline**: Fresh 2.0 stable targeted for Q3 2025
+
+### UI/Styling Best Practices
+- **AppShell Pattern**: Use consistent layout wrapper with centering utilities
+- **CSS Strategy**: Combine Tailwind plugin with manual utility definitions
+- **Build Verification**: Always check that CSS utilities are actually generated
+- **Root Element Height**: Ensure full-height cascade for proper centering
+
 ### buf.build npm Packages
 - Public packages don't require authentication tokens
 - Only need `@buf:registry=https://buf.build/gen/npm/v1/` in .npmrc
@@ -475,4 +514,9 @@ docker-compose logs -f backend
 - Document port changes clearly to avoid conflicts
 - Default ports: Frontend 8007, Backend 3007, Database 3307
 
-This project demonstrates a clean migration from REST to RPC while maintaining the simplicity and developer experience that made v1 successful.
+### ConnectRPC Integration Patterns
+- **API Proxy**: Use `routes/api/[...path].ts` for seamless backend integration
+- **Client Setup**: Create transport with `baseUrl: "/api"` for proxy routing
+- **Error Handling**: Leverage ConnectRPC's built-in error codes and types
+
+This project demonstrates a clean migration from REST to RPC while maintaining the simplicity and developer experience that made v1 successful, with practical solutions for Fresh 2.0 alpha limitations.

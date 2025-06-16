@@ -4,7 +4,7 @@
     "up": "docker-compose up -d",
     "up:build": "docker-compose up -d --build",
     "up:rebuild": "deno task clean && deno task proto:generate && docker-compose up -d --build --force-recreate",
-    "down": "docker-compose down",
+    "down": "dockΩer-compose down",
     "down:clean": "docker-compose down -v --remove-orphans",
     "logs": "docker-compose logs -f",
     "restart": "deno task down && deno task up",
