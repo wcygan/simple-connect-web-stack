@@ -18,11 +18,11 @@ cd simple-connect-web-stack
 # Start the application
 deno task up
 
+# Open in browser
+deno task open
+
 # Health check
 deno task health
-
-# View logs
-deno task logs
 ```
 
 The application will be available at:
@@ -137,6 +137,7 @@ deno task dev
 | `deno task dev` | Start development with hot reload |
 | `deno task dev:frontend` | Start only frontend development server |
 | `deno task dev:backend` | Start only backend with hot reload |
+| `deno task open` | Open frontend in browser (checks service health) |
 | `deno task proto:generate` | Generate code from Protocol Buffers |
 | `deno task proto:lint` | Lint Protocol Buffer files |
 | `deno task health` | Run comprehensive health checks |

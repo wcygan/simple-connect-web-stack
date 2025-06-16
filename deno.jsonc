@@ -26,6 +26,7 @@
     "status": "docker-compose ps",
     "health": "deno run -A scripts/health-check.ts",
     "monitor": "docker stats",
+    "open": "deno run -A scripts/open-browser.ts",
     "shell:frontend": "docker-compose exec frontend sh",
     "shell:backend": "docker-compose exec backend sh", 
     "shell:db": "docker-compose exec mysql mysql -u taskuser -ptaskpassword todos",
