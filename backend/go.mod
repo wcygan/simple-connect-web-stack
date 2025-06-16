@@ -8,11 +8,11 @@ require (
 	connectrpc.com/connect v1.18.1
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/uuid v1.6.0
-	google.golang.org/protobuf v1.36.6
-	// Testing dependencies
-	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/stretchr/testify v1.10.0
+	google.golang.org/protobuf v1.36.6
 )
+
+require github.com/mattn/go-sqlite3 v1.14.28
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect

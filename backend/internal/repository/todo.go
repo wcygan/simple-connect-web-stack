@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/wcygan/simple-connect-web-stack/internal/middleware"
 	todov1 "buf.build/gen/go/wcygan/simple-connect-web-stack/protocolbuffers/go/todo/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -55,23 +57,49 @@ type PaginationResult struct {
 
 // mysqlTodoRepository implements TodoRepository using MySQL
 type mysqlTodoRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *middleware.StructuredLogger
 }
 
 // NewMySQLTodoRepository creates a new MySQL-based todo repository
 func NewMySQLTodoRepository(db *sql.DB) TodoRepository {
-	return &mysqlTodoRepository{db: db}
+	return &mysqlTodoRepository{
+		db:     db,
+		logger: middleware.NewStructuredLogger(middleware.LevelInfo),
+	}
+}
+
+// NewMySQLTodoRepositoryWithLogger creates a new MySQL repository with custom logger
+func NewMySQLTodoRepositoryWithLogger(db *sql.DB, logger *middleware.StructuredLogger) TodoRepository {
+	return &mysqlTodoRepository{
+		db:     db,
+		logger: logger,
+	}
 }
 
 // Create creates a new task in the database
 func (r *mysqlTodoRepository) Create(ctx context.Context, req *CreateTaskRequest) (*todov1.Task, error) {
+	start := time.Now()
+	ctx = middleware.WithSource(ctx, "repository.Create")
+	
 	id := uuid.New().String()
 
 	query := `
 		INSERT INTO tasks (id, title, completed)
 		VALUES (?, ?, FALSE)
 	`
-	_, err := r.db.ExecContext(ctx, query, id, req.Title)
+	
+	result, err := r.db.ExecContext(ctx, query, id, req.Title)
+	duration := time.Since(start)
+	
+	var rowsAffected int64
+	if result != nil {
+		rowsAffected, _ = result.RowsAffected()
+	}
+	
+	// Log database operation
+	r.logger.LogDatabaseOperation(ctx, "INSERT tasks", duration, err == nil, rowsAffected)
+	
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task: %w", err)
 	}
@@ -81,6 +109,9 @@ func (r *mysqlTodoRepository) Create(ctx context.Context, req *CreateTaskRequest
 
 // GetByID retrieves a task by its ID
 func (r *mysqlTodoRepository) GetByID(ctx context.Context, id string) (*todov1.Task, error) {
+	start := time.Now()
+	ctx = middleware.WithSource(ctx, "repository.GetByID")
+	
 	var task todov1.Task
 	var createdAt, updatedAt sql.NullTime
 
@@ -93,6 +124,15 @@ func (r *mysqlTodoRepository) GetByID(ctx context.Context, id string) (*todov1.T
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&task.Id, &task.Title, &task.Completed, &createdAt, &updatedAt,
 	)
+	duration := time.Since(start)
+	
+	// Log database operation
+	rowsReturned := int64(0)
+	if err == nil {
+		rowsReturned = 1
+	}
+	r.logger.LogDatabaseOperation(ctx, "SELECT task by ID", duration, err == nil || err == sql.ErrNoRows, rowsReturned)
+	
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("task not found: %s", id)
 	}

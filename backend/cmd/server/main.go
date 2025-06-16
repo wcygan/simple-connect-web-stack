@@ -11,7 +11,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"connectrpc.com/connect"
 	"github.com/wcygan/simple-connect-web-stack/internal/db"
+	"github.com/wcygan/simple-connect-web-stack/internal/middleware"
 	"github.com/wcygan/simple-connect-web-stack/internal/service"
 	"buf.build/gen/go/wcygan/simple-connect-web-stack/connectrpc/go/todo/v1/todov1connect"
 )
@@ -50,18 +52,27 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	// Set up logging and middleware
+	logLevel := middleware.GetLogLevel(os.Getenv("LOG_LEVEL"))
+	logger := middleware.NewStructuredLogger(logLevel)
+	middlewareStack := middleware.NewMiddlewareStack(logger)
+
 	// Create service
 	todoService := service.NewTodoService(database)
 
 	// Create HTTP mux
 	mux := http.NewServeMux()
 
-	// Mount the TodoService
-	path, handler := todov1connect.NewTodoServiceHandler(todoService)
+	// Mount the TodoService with Connect interceptors
+	interceptors := middlewareStack.GetConnectInterceptors()
+	path, handler := todov1connect.NewTodoServiceHandler(todoService, connect.WithInterceptors(interceptors...))
 	mux.Handle(path, handler)
 
-	// Add CORS middleware
-	corsHandler := withCORS(mux)
+	// Apply middleware stack (includes logging, recovery, request ID, etc.)
+	finalHandler := middlewareStack.WrapHandler(mux)
+	
+	// Add CORS middleware on top
+	corsHandler := withCORS(finalHandler)
 
 	// Get port from environment or default to 3007
 	port := os.Getenv("PORT")

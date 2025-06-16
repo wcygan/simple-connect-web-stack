@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
+	"github.com/wcygan/simple-connect-web-stack/internal/middleware"
 	"github.com/wcygan/simple-connect-web-stack/internal/repository"
 	"github.com/wcygan/simple-connect-web-stack/internal/validator"
 	todov1 "buf.build/gen/go/wcygan/simple-connect-web-stack/protocolbuffers/go/todo/v1"
@@ -14,23 +15,37 @@ import (
 
 // TodoService implements the TodoService RPC service
 type TodoService struct {
-	repo      repository.TodoRepository
-	validator *validator.TodoValidator
+	repo         repository.TodoRepository
+	validator    *validator.TodoValidator
+	errorHandler *middleware.ErrorHandler
 }
 
 // NewTodoService creates a new TodoService
 func NewTodoService(db *sql.DB) *TodoService {
+	logger := middleware.NewStructuredLogger(middleware.LevelInfo)
 	return &TodoService{
-		repo:      repository.NewMySQLTodoRepository(db),
-		validator: validator.NewTodoValidator(),
+		repo:         repository.NewMySQLTodoRepository(db),
+		validator:    validator.NewTodoValidator(),
+		errorHandler: middleware.NewErrorHandler(logger),
 	}
 }
 
 // NewTodoServiceWithRepository creates a TodoService with a custom repository
 func NewTodoServiceWithRepository(repo repository.TodoRepository) *TodoService {
+	logger := middleware.NewStructuredLogger(middleware.LevelInfo)
 	return &TodoService{
-		repo:      repo,
-		validator: validator.NewTodoValidator(),
+		repo:         repo,
+		validator:    validator.NewTodoValidator(),
+		errorHandler: middleware.NewErrorHandler(logger),
+	}
+}
+
+// NewTodoServiceWithDependencies creates a TodoService with all dependencies
+func NewTodoServiceWithDependencies(repo repository.TodoRepository, validator *validator.TodoValidator, errorHandler *middleware.ErrorHandler) *TodoService {
+	return &TodoService{
+		repo:         repo,
+		validator:    validator,
+		errorHandler: errorHandler,
 	}
 }
 
@@ -41,7 +56,7 @@ func (s *TodoService) CreateTask(
 ) (*connect.Response[todov1.CreateTaskResponse], error) {
 	// Validate request
 	if err := s.validator.ValidateCreateTask(req.Msg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, s.errorHandler.HandleValidationError(err)
 	}
 
 	// Create task
@@ -51,7 +66,7 @@ func (s *TodoService) CreateTask(
 
 	task, err := s.repo.Create(ctx, createReq)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, s.errorHandler.HandleRepositoryError(err)
 	}
 
 	return connect.NewResponse(&todov1.CreateTaskResponse{
@@ -66,15 +81,12 @@ func (s *TodoService) GetTask(
 ) (*connect.Response[todov1.GetTaskResponse], error) {
 	// Validate request
 	if err := s.validator.ValidateGetTask(req.Msg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, s.errorHandler.HandleValidationError(err)
 	}
 
 	task, err := s.repo.GetByID(ctx, req.Msg.Id)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, connect.NewError(connect.CodeNotFound, err)
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, s.errorHandler.HandleRepositoryError(err)
 	}
 
 	return connect.NewResponse(&todov1.GetTaskResponse{
@@ -89,7 +101,7 @@ func (s *TodoService) ListTasks(
 ) (*connect.Response[todov1.ListTasksResponse], error) {
 	// Validate request
 	if err := s.validator.ValidateListTasks(req.Msg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, s.errorHandler.HandleValidationError(err)
 	}
 
 	// Convert to repository request
@@ -104,7 +116,7 @@ func (s *TodoService) ListTasks(
 
 	tasks, pagination, err := s.repo.List(ctx, filters)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, s.errorHandler.HandleRepositoryError(err)
 	}
 
 	return connect.NewResponse(&todov1.ListTasksResponse{
@@ -127,7 +139,7 @@ func (s *TodoService) UpdateTask(
 ) (*connect.Response[todov1.UpdateTaskResponse], error) {
 	// Validate request
 	if err := s.validator.ValidateUpdateTask(req.Msg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, s.errorHandler.HandleValidationError(err)
 	}
 
 	// Convert to repository request
@@ -139,10 +151,7 @@ func (s *TodoService) UpdateTask(
 
 	task, err := s.repo.Update(ctx, updateReq)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, connect.NewError(connect.CodeNotFound, err)
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, s.errorHandler.HandleRepositoryError(err)
 	}
 
 	return connect.NewResponse(&todov1.UpdateTaskResponse{
@@ -157,15 +166,12 @@ func (s *TodoService) DeleteTask(
 ) (*connect.Response[emptypb.Empty], error) {
 	// Validate request
 	if err := s.validator.ValidateDeleteTask(req.Msg); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, s.errorHandler.HandleValidationError(err)
 	}
 
 	err := s.repo.Delete(ctx, req.Msg.Id)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, connect.NewError(connect.CodeNotFound, err)
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, s.errorHandler.HandleRepositoryError(err)
 	}
 
 	return connect.NewResponse(&emptypb.Empty{}), nil
@@ -178,7 +184,7 @@ func (s *TodoService) HealthCheck(
 ) (*connect.Response[todov1.HealthCheckResponse], error) {
 	// Check repository health
 	if err := s.repo.HealthCheck(ctx); err != nil {
-		return nil, connect.NewError(connect.CodeUnavailable, err)
+		return nil, s.errorHandler.HandleRepositoryError(err)
 	}
 
 	return connect.NewResponse(&todov1.HealthCheckResponse{
