@@ -1,4 +1,4 @@
-import { defineConfig } from "$fresh/server.ts";
+import { defineConfig } from "fresh";
 import tailwind from "@fresh/plugin-tailwind";
 
 export default defineConfig({
