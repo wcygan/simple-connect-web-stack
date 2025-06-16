@@ -32,13 +32,87 @@ The application will be available at:
 
 ## 🏗️ Architecture
 
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Browser[Web Browser<br/>Port 8007]
+    end
+
+    subgraph "Frontend Services"
+        Fresh[Deno Fresh 2.0<br/>SSR + Islands Architecture]
+        Static[Static Assets<br/>CSS, JS, Images]
+        APIProxy[API Proxy Route<br/>/api/[...path].ts]
+    end
+
+    subgraph "API Layer"
+        ConnectClient[ConnectRPC Client<br/>Generated TypeScript]
+        Transport[Connect Transport<br/>HTTP/JSON Protocol]
+    end
+
+    subgraph "Backend Services"
+        GoServer[Go Server<br/>Port 3007]
+        ConnectService[TodoService<br/>RPC Implementation]
+        ServiceLayer[Service Layer<br/>Business Logic]
+        DBLayer[Database Layer<br/>SQLx + Models]
+    end
+
+    subgraph "Data Storage"
+        MySQL[(MySQL 8.0<br/>Port 3307<br/>todos database)]
+    end
+
+    subgraph "Development Tools"
+        Buf[Buf CLI<br/>Proto Management]
+        Air[Air<br/>Go Hot Reload]
+        Docker[Docker Compose<br/>Service Orchestration]
+    end
+
+    %% Client Connections
+    Browser -->|HTTP Request| Fresh
+    Fresh --> Static
+    Fresh --> APIProxy
+    
+    %% API Flow
+    APIProxy -->|Proxy Request| ConnectClient
+    ConnectClient --> Transport
+    Transport -->|ConnectRPC<br/>HTTP/JSON| GoServer
+    
+    %% Backend Flow
+    GoServer --> ConnectService
+    ConnectService --> ServiceLayer
+    ServiceLayer --> DBLayer
+    DBLayer -->|SQL Queries| MySQL
+    
+    %% Development Tools
+    Buf -.->|Generate Code| ConnectClient
+    Buf -.->|Generate Code| ConnectService
+    Air -.->|Watch & Reload| GoServer
+    Docker -.->|Container Management| MySQL
+    Docker -.->|Container Management| GoServer
+    Docker -.->|Container Management| Fresh
+
+    %% Styling
+    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef storage fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef tools fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef api fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class Browser,Fresh,Static,APIProxy frontend
+    class GoServer,ConnectService,ServiceLayer,DBLayer backend
+    class MySQL storage
+    class Buf,Air,Docker tools
+    class ConnectClient,Transport api
 ```
-┌─────────────────┐    ConnectRPC     ┌─────────────────┐    MySQL     ┌─────────────────┐
-│   Frontend      │◄──────────────────►│    Backend      │◄─────────────►│    Database     │
-│  Deno Fresh     │    (HTTP/JSON)     │   Go Server     │   (SQLx)     │    MySQL 8.0    │
-│  Port 8007      │                    │   Port 3007     │              │    Port 3307    │
-└─────────────────┘                    └─────────────────┘              └─────────────────┘
-```
+
+### Architecture Overview
+
+The Simple Connect Web Stack uses a modern microservices architecture with clear separation of concerns:
+
+- **Frontend**: Deno Fresh 2.0 provides server-side rendering with interactive islands
+- **API Communication**: ConnectRPC enables type-safe communication using Protocol Buffers
+- **Backend**: Go server implements business logic with high performance
+- **Database**: MySQL 8.0 provides reliable data persistence with full-text search
+- **Development**: Comprehensive tooling for hot reload, code generation, and containerization
 
 ### Technology Stack
 
