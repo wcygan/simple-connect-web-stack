@@ -1,13 +1,34 @@
 {
   "tasks": {
-    // Development tasks
+    // Production deployment tasks
     "up": "docker-compose up -d",
+    "up:build": "docker-compose up -d --build",
+    "up:rebuild": "deno task clean && deno task proto:generate && docker-compose up -d --build --force-recreate",
     "down": "docker-compose down",
+    "down:clean": "docker-compose down -v --remove-orphans",
     "logs": "docker-compose logs -f",
-    "dev": "docker-compose up -d db && deno task dev:all",
+    "restart": "deno task down && deno task up",
+    "restart:rebuild": "deno task down:clean && deno task up:rebuild",
+    
+    // Development tasks
+    "dev": "docker-compose up -d mysql && deno task dev:all",
     "dev:all": "concurrently --kill-others \"deno task dev:frontend\" \"deno task dev:backend\"",
     "dev:frontend": "cd frontend && deno task dev",
     "dev:backend": "cd backend && air",
+    
+    // Production deployment helpers
+    "deploy": "deno task deploy:build && deno task deploy:up",
+    "deploy:build": "deno task proto:generate && cd frontend && deno task build && cd .. && docker-compose build --no-cache",
+    "deploy:up": "docker-compose up -d --force-recreate",
+    "deploy:production": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build",
+    
+    // Deployment status and monitoring
+    "status": "docker-compose ps",
+    "health": "deno run -A scripts/health-check.ts",
+    "monitor": "docker stats",
+    "shell:frontend": "docker-compose exec frontend sh",
+    "shell:backend": "docker-compose exec backend sh", 
+    "shell:db": "docker-compose exec mysql mysql -u taskuser -ptaskpassword tasks_db",
     
     // Protocol buffer tasks
     "proto:generate": "buf generate",
