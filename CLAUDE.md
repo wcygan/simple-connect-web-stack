@@ -4,102 +4,269 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## Repository Overview
 
-Simple Connect Web Stack v2 is a modern todo application migrating from REST (v1) to RPC architecture using ConnectRPC. It maintains the same user experience while leveraging Protocol Buffers for type-safe client-server communication.
+Simple Connect Web Stack v2 is a production-ready, modern full-stack application demonstrating best practices for ConnectRPC + Fresh integration. This monorepo showcases clean architecture principles, comprehensive testing strategies, and sophisticated deployment patterns.
+
+**Architecture**: Schema-first development with Protocol Buffers, Fresh islands architecture, and Go clean architecture patterns.
 
 **Key Migration: v1 (Rust/Axum + REST) → v2 (Go/ConnectRPC + Protocol Buffers)**
 
-## Essential Commands
+## Project Structure Deep Dive
 
-### Development
-```bash
-# Start entire stack
-deno task up
-
-# Run frontend only
-cd frontend && deno task dev
-
-# Run backend only  
-cd backend && go run ./cmd/server
-
-# Generate code from protobuf
-buf generate
-
-# Hot reload development
-deno task dev:all
-```
-
-### Protocol Buffer Management
-```bash
-# Generate Go server and TypeScript client code
-buf generate
-
-# Lint protobuf files
-buf lint
-
-# Check for breaking changes
-buf breaking --against .git#branch=main
-
-# Format protobuf files
-buf format -w
-
-# Push to Buf Schema Registry
-buf push
-```
-
-### Testing
-```bash
-# Run all tests
-deno task test
-
-# Frontend tests
-cd frontend && deno test
-
-# Backend tests
-cd backend && go test ./...
-
-# Integration tests with Docker
-deno task test:integration
-
-# E2E tests
-deno task test:e2e
-```
-
-## Architecture Overview
-
-### Directory Structure
+### Monorepo Organization
 ```
 simple-connect-web-stack/
-├── frontend/               # Deno Fresh 2.0 (unchanged architecture)
-│   ├── routes/            # Pages and API proxy
-│   ├── islands/           # Interactive components  
-│   ├── components/        # Static components
-│   └── deno.json         # Frontend tasks
-├── backend/               # Go + ConnectRPC
-│   ├── cmd/server/        # Main server entry
-│   ├── internal/          # Business logic
-│   │   ├── service/       # RPC service implementations
-│   │   ├── db/           # Database operations
-│   │   └── models/       # Domain models
-│   ├── go.mod            # Go dependencies
-│   └── buf.gen.yaml      # Backend code generation
-├── proto/                 # Protocol Buffer definitions
-│   └── todo/
-│       └── v1/
-│           └── todo.proto
-├── buf.yaml              # Buf configuration
-├── buf.gen.yaml          # Root code generation
-└── docker-compose.yml    # Service orchestration
+├── frontend/           # Deno Fresh 2.0 with islands architecture
+│   ├── components/     # Server-rendered UI components
+│   ├── islands/        # Client-side interactive components
+│   ├── hooks/          # Custom state management (Preact signals)
+│   ├── routes/         # File-based routing + API proxy
+│   └── lib/gen/        # Generated TypeScript types from protobuf
+├── backend/            # Go + ConnectRPC clean architecture
+│   ├── cmd/server/     # Application entry point
+│   ├── internal/       # Business logic (service, repository, middleware)
+│   └── internal/gen/   # Generated Go types from protobuf
+├── proto/              # Protocol Buffer schema definitions (source of truth)
+├── scripts/            # Deno automation scripts (testing, deployment)
+├── docs/               # Comprehensive project documentation
+├── tests/              # Integration and E2E test suites
+└── docker-compose.yml  # Multi-environment orchestration
 ```
 
-### Service Communication
+### Architecture Patterns
+
+#### 1. Schema-First Development
+- **Single Source of Truth**: Protocol Buffer definitions in `proto/`
+- **Type Generation**: Automatic Go and TypeScript code generation
+- **Version Control**: Schema evolution with breaking change detection
+
+#### 2. Frontend Islands Architecture (Fresh)
+- **Selective Hydration**: Only interactive components run on client
+- **Performance**: Minimal JavaScript bundle size
+- **SEO**: Server-side rendering by default
+
+#### 3. Backend Clean Architecture (Go)
+- **Separation of Concerns**: Service → Repository → Database layers
+- **Dependency Injection**: Interface-based design for testability
+- **Middleware**: Cross-cutting concerns (logging, validation, errors)
+
+#### 4. API Gateway Pattern
+- **Unified Interface**: `/api/*` routes proxy RPC calls to backend
+- **Transport Flexibility**: HTTP/JSON for web, can upgrade to gRPC
+- **CORS Handling**: Centralized CORS policy in Fresh proxy
+
+## Essential Commands
+
+### Development Workflow
+```bash
+# Start full development stack (recommended)
+docker-compose up -d
+
+# Start individual services
+cd frontend && deno task dev        # Frontend with hot reload (port 8007)
+cd backend && air                   # Backend with hot reload (port 3007)
+
+# Generate code from Protocol Buffers
+buf generate                        # Generates both Go and TypeScript code
+
+# Build frontend for production
+cd frontend && deno task build
+
+# Initialize project (first-time setup)
+deno run -A scripts/init-v2.ts
+```
+
+### Protocol Buffer Workflow
+```bash
+# Core buf commands for schema management
+buf generate                        # Generate Go and TypeScript code
+buf lint                           # Validate proto file syntax
+buf format -w                      # Format proto files
+buf breaking --against .git#branch=main  # Check for breaking changes
+buf push                           # Publish to buf.build registry
+
+# Regenerate after schema changes
+buf generate && cd frontend && deno cache --reload main.ts
+```
+
+### Testing Strategy
+```bash
+# Comprehensive test runner (runs all test types)
+deno run -A scripts/test-all.ts
+
+# Individual test categories
+cd frontend && deno test --coverage=./coverage  # Frontend unit tests
+cd backend && go test -v -cover ./...           # Backend unit tests
+deno run -A scripts/test-integration.ts        # Integration tests
+deno run -A scripts/test-database.ts          # Database connectivity
+
+# Test watching for development
+cd frontend && deno task test:watch
+cd backend && go test -v ./... -count=1        # Force re-run
+```
+
+### Production Operations
+```bash
+# Build and deploy
+docker-compose -f docker-compose.prod.yml up -d
+
+# Health checks
+deno run -A scripts/health-check.ts
+
+# Open development environment
+deno run -A scripts/open-browser.ts
+```
+
+## Implementation Deep Dive
+
+### Frontend Architecture (Deno Fresh 2.0)
+
+#### Component Organization
+```
+frontend/
+├── components/           # Server-rendered components
+│   ├── layout/          # AppShell, TopBar (layout components)
+│   └── todo/            # AddTaskForm, TaskItem, TaskList (domain components)
+├── hooks/               # Custom state management
+│   ├── useTodoClient.ts     # ConnectRPC client setup
+│   ├── useTodoState.ts      # Preact signals state management
+│   ├── useTodoActions.ts    # Business logic and RPC calls
+│   └── useErrorBoundary.ts  # Error handling
+├── islands/             # Client-side interactive components
+│   └── TodoApp.tsx          # Main application island
+├── routes/              # File-based routing
+│   ├── index.tsx            # Homepage (SSR)
+│   ├── _app.tsx             # App shell
+│   └── api/[...path].ts     # API proxy for RPC calls
+├── lib/gen/             # Generated TypeScript types
+│   └── todo/v1/
+│       ├── todo_pb.ts       # Protocol Buffer messages
+│       └── todo_connect.ts  # ConnectRPC service definitions
+└── static/              # Static assets and fallback CSS
+```
+
+#### State Management Pattern
+```typescript
+// Preact signals for reactive state
+const tasks = useSignal<Task[]>([]);
+const loading = useSignal(false);
+
+// Business logic hooks combine RPC client with state
+const { createTask, toggleTask, deleteTask } = useTodoActions();
+```
+
+### Backend Architecture (Go + ConnectRPC)
+
+#### Clean Architecture Implementation
+```
+backend/
+├── cmd/server/          # Application entry point
+│   └── main.go             # Server setup, middleware, routing
+├── internal/            # Business logic (private)
+│   ├── service/            # RPC service implementations
+│   │   ├── todo.go            # TodoService with all RPC methods
+│   │   └── todo_test.go       # Service unit tests
+│   ├── repository/         # Data access layer
+│   │   ├── todo.go            # TodoRepository interface + MySQL impl
+│   │   ├── todo_test.go       # Repository tests
+│   │   └── mock_todo.go       # Mock for testing
+│   ├── middleware/         # Cross-cutting concerns
+│   │   ├── logger.go          # Structured logging
+│   │   ├── error.go           # Error handling
+│   │   └── middleware.go      # Request/response middleware
+│   ├── validator/          # Input validation
+│   │   └── todo.go            # Request validation logic
+│   ├── db/                 # Database operations
+│   │   └── db.go              # Connection, migrations
+│   └── gen/               # Generated Protocol Buffer code
+│       └── todo/v1/
+│           ├── todo.pb.go        # Protocol Buffer messages
+│           └── todov1connect/    # ConnectRPC service handlers
+├── go.mod               # Go module dependencies
+└── Dockerfile           # Multi-stage build with hot reload
+```
+
+#### Dependency Injection Pattern
+```go
+type TodoService struct {
+    repo         repository.TodoRepository  // Interface for testability
+    validator    *validator.TodoValidator
+    errorHandler *middleware.ErrorHandler
+}
+
+// Constructor with dependency injection
+func NewTodoService(db *sql.DB) *TodoService {
+    return &TodoService{
+        repo:         repository.NewMySQLTodoRepository(db),
+        validator:    validator.NewTodoValidator(),
+        errorHandler: middleware.NewErrorHandler(logger),
+    }
+}
+```
+
+### Protocol Buffer Schema Management
+
+#### Schema Organization
+```
+proto/
+├── buf.yaml             # Buf configuration
+└── todo/v1/
+    └── todo.proto       # Service and message definitions
+```
+
+#### Code Generation Pipeline
+```yaml
+# buf.gen.yaml - Generates for both frontend and backend
+version: v2
+plugins:
+  - remote: buf.build/connectrpc/go
+    out: backend/internal/gen
+  - remote: buf.build/bufbuild/es  
+    out: frontend/lib/gen
+```
+
+### Service Communication Flow
 
 ```
-┌─────────────────┐    ConnectRPC    ┌─────────────────┐    MySQL    ┌─────────────────┐
-│   Frontend      │◄──────────────────►│    Backend      │◄───────────►│    Database     │
-│  Fresh 2.0      │    (HTTP/JSON)     │   Go Server     │   (SQLx)    │    MySQL 8.0    │
-│  Port 8007      │                    │   Port 3007     │             │    Port 3307    │
-└─────────────────┘                    └─────────────────┘             └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        Browser Client                           │
+│  Preact Islands + Signals State Management                     │
+└─────────────────────┬───────────────────────────────────────────┘
+                     │ HTTP/JSON (ConnectRPC Web)
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Fresh Server (Port 8007)                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   SSR Routes    │  │   API Proxy     │  │   Static Assets │  │
+│  │   (index.tsx)   │  │  ([...path].ts) │  │   (styles.css)  │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────────┬───────────────────────────────────────────┘
+                     │ Proxied RPC Calls
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                Go ConnectRPC Server (Port 3007)                │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Service       │  │   Repository    │  │   Middleware    │  │
+│  │   (RPC Logic)   │  │  (Data Access)  │  │ (Cross-cutting) │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────────┬───────────────────────────────────────────┘
+                     │ SQL Queries
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    MySQL Database (Port 3307)                  │
+│               Connection Pool + Transactions                   │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+### Data Flow Example: Creating a Task
+
+1. **Frontend**: User types in `AddTaskForm`, triggers `createTask()` action
+2. **Signal Update**: `useTodoActions` calls `client.createTask({ title })`
+3. **ConnectRPC**: HTTP POST to `/api/todo.v1.TodoService/CreateTask`
+4. **Fresh Proxy**: `routes/api/[...path].ts` forwards to `backend:3007`
+5. **Go Service**: `TodoService.CreateTask()` validates and processes request
+6. **Repository**: MySQL insert with UUID generation and timestamps
+7. **Response**: Type-safe task object returned through all layers
+8. **UI Update**: Preact signals automatically re-render components
 
 ## Protocol Buffer Service Definition
 
@@ -484,39 +651,104 @@ buf breaking --against .git#branch=main
 docker-compose logs -f backend
 ```
 
-## Key Learnings
+## Advanced Development Patterns
 
-### Fresh 2.0 Alpha Considerations
-- **Production Ready**: Fresh 2.0 alpha is stable enough for production (powers deno.com)
-- **Plugin Ecosystem**: Alpha plugins may have incomplete functionality (especially Tailwind)
-- **Fallback Strategies**: Always implement CSS fallbacks for critical styling
-- **JSR Imports**: Use `jsr:@fresh/core@^2.0.0-alpha.22` over deno.land URLs
-- **Stable Timeline**: Fresh 2.0 stable targeted for Q3 2025
+### Script Automation (Deno)
 
-### UI/Styling Best Practices
-- **AppShell Pattern**: Use consistent layout wrapper with centering utilities
-- **CSS Strategy**: Combine Tailwind plugin with manual utility definitions
-- **Build Verification**: Always check that CSS utilities are actually generated
-- **Root Element Height**: Ensure full-height cascade for proper centering
+The project includes sophisticated Deno scripts for automation:
 
-### buf.build npm Packages
-- Public packages don't require authentication tokens
-- Only need `@buf:registry=https://buf.build/gen/npm/v1/` in .npmrc
-- Import directly from npm packages: `@buf/wcygan_simple-connect-web-stack.bufbuild_es`
+```typescript
+// scripts/test-all.ts - Comprehensive test orchestration
+class TestRunner {
+  async run() {
+    await this.runUnitTests();         // Frontend & backend unit tests
+    await this.runIntegrationTests();  // RPC integration tests
+    await this.runE2ETests();          // Full stack browser tests
+    await this.generateReport();       // JSON test reports
+  }
+}
 
-### Docker Build Strategy
-- Pre-built assets approach is more reliable than building in Docker
-- Avoids ESM module compatibility issues with Fresh build process
-- Faster Docker builds and deterministic results
+// Other automation scripts:
+// scripts/health-check.ts      - Service health monitoring
+// scripts/test-integration.ts  - ConnectRPC integration testing
+// scripts/test-database.ts     - Database connectivity validation
+// scripts/init-v2.ts          - Project structure initialization
+```
 
-### Port Management
-- Use environment variables for all port configuration
-- Document port changes clearly to avoid conflicts
-- Default ports: Frontend 8007, Backend 3007, Database 3307
+### Testing Architecture
 
-### ConnectRPC Integration Patterns
-- **API Proxy**: Use `routes/api/[...path].ts` for seamless backend integration
-- **Client Setup**: Create transport with `baseUrl: "/api"` for proxy routing
-- **Error Handling**: Leverage ConnectRPC's built-in error codes and types
+#### Multi-Layer Testing Strategy
+1. **Unit Tests**: Service logic, repository interfaces, component behavior
+2. **Integration Tests**: RPC calls, database operations, API contracts
+3. **E2E Tests**: Full browser automation with Docker orchestration
 
-This project demonstrates a clean migration from REST to RPC while maintaining the simplicity and developer experience that made v1 successful, with practical solutions for Fresh 2.0 alpha limitations.
+#### Test Environment Management
+```yaml
+# docker-compose.test.yml
+services:
+  test-db:       # Isolated test database
+  test-backend:  # Backend with test configuration
+  test-frontend: # Frontend with test transport
+  playwright:    # Browser automation container
+```
+
+### Production Deployment Patterns
+
+#### Multi-Stage Docker Builds
+```dockerfile
+# Development stage with hot reload
+FROM base AS development
+RUN deno cache --reload main.ts
+CMD ["deno", "task", "dev"]
+
+# Production stage with optimized assets
+FROM base AS production  
+COPY --from=builder /app .
+CMD ["deno", "run", "-A", "--node-modules-dir=auto", "main.ts"]
+```
+
+#### Environment Configuration
+```bash
+# Development (default)
+FRONTEND_PORT=8007
+BACKEND_PORT=3007
+DATABASE_PORT=3307
+
+# Production
+BACKEND_URL=https://api.yourdomain.com
+DATABASE_URL=mysql://user:pass@prod-db/todos
+```
+
+## Key Implementation Insights
+
+### Fresh 2.0 Alpha Production Readiness
+- **Stable Core**: Fresh 2.0 alpha powers deno.com (production-ready)
+- **Plugin Limitations**: Tailwind plugin unreliable, use CSS fallbacks
+- **Build Strategy**: Pre-built assets approach for Docker compatibility
+- **JSR Migration**: Use `jsr:@fresh/core` over deprecated deno.land URLs
+
+### ConnectRPC Integration Excellence
+- **Type Safety**: End-to-end type safety from Protocol Buffers
+- **Transport Flexibility**: HTTP/JSON for web, can upgrade to gRPC
+- **Error Handling**: Built-in Connect error codes with proper propagation
+- **Client Patterns**: Singleton client with transport configuration
+
+### buf.build Package Management
+- **Registry Configuration**: Simple `.npmrc` with custom registry URL
+- **Version Control**: Commit-hash versioning for reproducible builds
+- **Docker Integration**: Pre-built assets solve registry access issues
+- **Type Distribution**: Automatic npm package publishing from buf.build
+
+### Performance & Scalability
+- **Islands Architecture**: Minimal client-side JavaScript
+- **Connection Pooling**: MySQL connection pool (max 25 connections)
+- **Signal Optimization**: Fine-grained reactivity with Preact signals
+- **Hot Reload**: Both frontend (Deno) and backend (Air) development
+
+### Security & Reliability
+- **Input Validation**: Server-side validation for all RPC methods
+- **Error Boundaries**: React-style error handling in Fresh islands
+- **Health Checks**: Comprehensive service monitoring
+- **CORS Configuration**: Proper cross-origin resource sharing
+
+This project represents a sophisticated, production-ready implementation that balances modern architecture with practical development concerns, showcasing best practices for ConnectRPC + Fresh integration.
